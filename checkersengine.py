@@ -1,5 +1,7 @@
 import re
 
+initialWeight = 0.5
+
 class CheckersGame:
     def __init__(self, data):
         self.eventName = ""
@@ -84,6 +86,31 @@ def makeBoard():
 
     return board
 
+def makeInitialWeights():
+    weights = []
+    for i in range(4):
+        a = [initialWeight for j in range(32)]
+        weights.append(a)
+    return weights
+
+def getFeatures(board):
+    features = []
+    for i in range(1, 5):
+        a = [1 if(x == i) else 0 for x in board]
+        features.append(a)
+    return features
+
+def evaluateBoard(board, weights):
+    features = getFeatures(board)
+    value = 0
+    for i in range(4):
+        for j in range(32):
+            value += (weights[i][j] * features[i][j])
+    return value
+
 filePath = 'dataset/OCA_2.0.pdn'
 games = parsePdnFile(filePath)
 board = makeBoard()
+print(getFeatures(board))
+print(evaluateBoard(board, makeInitialWeights()))
+print("finished parsing")
