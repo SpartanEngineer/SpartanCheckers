@@ -1,4 +1,5 @@
-import re
+import re, tkFont
+from Tkinter import *
 
 initialWeight = 0.5
 
@@ -109,8 +110,48 @@ def evaluateBoard(board, weights):
     return value
 
 filePath = 'dataset/OCA_2.0.pdn'
-games = parsePdnFile(filePath)
+#games = parsePdnFile(filePath)
 board = makeBoard()
-print(getFeatures(board))
-print(evaluateBoard(board, makeInitialWeights()))
-print("finished parsing")
+#print(getFeatures(board))
+#print(evaluateBoard(board, makeInitialWeights()))
+#print("finished parsing")
+
+# GUI Code
+
+root = Tk()
+Grid.rowconfigure(root, 0, weight=1)
+Grid.columnconfigure(root, 0, weight=1)
+root.minsize(width=600, height=600)
+root.maxsize(width=600, height=600)
+root.wm_title("Checkers!!!")
+
+frame = Frame(root)
+frame.grid(row=0, column=0, sticky=N+S+E+W)
+
+buttonFont = tkFont.Font(family='Helvetica', size=36, weight='bold')
+buttons = []
+i, j, num = 0, 0, 0
+for r in range(8):
+    num += 1
+    if(num >= 2):
+        num = 0
+    for c in range(8):
+        button = Button(frame, text="") 
+        button.grid(row=r, column=c, sticky=N+S+E+W)
+        button['font'] = buttonFont
+        button['state'] = 'disabled'
+        if(j % 2 == num):
+            i += 1
+            button['text'] = str(i)
+            button['bg'] = 'grey'
+            button['state'] = 'normal'
+            buttons.append(button)
+
+        j += 1
+
+for r in range(8):
+    Grid.rowconfigure(frame, r, weight=1)
+for c in range(8):
+    Grid.columnconfigure(frame, c, weight=1)
+
+root.mainloop()
