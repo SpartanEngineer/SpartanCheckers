@@ -171,6 +171,7 @@ kingMoveMapping =  {1:[[5], [6, 10, 15, 19, 24, 28]],
                     32:[[27, 23, 18, 14, 9, 5], [28]]}
 
 moveMappings = {'w':whiteMoveMapping, 'b':blackMoveMapping}
+jumpMappings = {'w':whiteJumpMapping, 'b':blackJumpMapping}
 
 initialWeight = 0.5
 
@@ -280,8 +281,33 @@ def evaluateBoard(board, weights):
             value += (weights[i][j] * features[i][j])
     return value
 
-def getAllPossibleMoves(board, turn):
+def getJumps(board, index, jump, allyChecker, enemyChecker):
     moves = []
+    #TODO- implement this
+    return moves
+
+def getAllPossibleJumps(board, turn):
+    moves = []
+    jumpMapping = jumpMappings[turn]
+
+    allyChecker = 1 if(turn == 'w') else 3
+    enemyChecker = 3 if(turn == 'w') else 1
+
+    #TODO- finish implementing this
+    for i in range(32):
+        if(board[i] == allyChecker):
+            for jump in moveMapping[i+1]:
+                at = getJumps(board, i, jump, allyChecker, enemyChecker)
+                if(at != []):
+                    for move in at:
+                        moves.append(move)
+
+    return moves
+
+def getAllPossibleMoves(board, turn):
+    moves = getAllPossibleJumps(board, turn)
+    if(moves != []):
+        return moves
     moveMapping = moveMappings[turn]
 
     allyChecker = 1 if(turn == 'w') else 3
@@ -360,4 +386,5 @@ for r in range(8):
 for c in range(8):
     Grid.columnconfigure(frame, c, weight=1)
 
+updateButtons()
 root.mainloop()
