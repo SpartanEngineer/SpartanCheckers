@@ -1,6 +1,7 @@
 import re, tkFont
 from Tkinter import *
 from functools import partial
+import copy
 
 #the squares that a checker can move into from each position
 blackMoveMapping = {1:[5, 6],
@@ -281,10 +282,16 @@ def evaluateBoard(board, weights):
             value += (weights[i][j] * features[i][j])
     return value
 
-def getJumps(board, index, jump, allyChecker, enemyChecker):
-    moves = []
-    #TODO- implement this
-    return moves
+def getJumps(board, index, jumpMapping, enemyChecker, prev, result):
+    #i == the jumped over spot, j == the landing spot
+    for (i, j) in jumpMapping[index+1]:
+        if(board[i-1] == enemyChecker and board[j-1] == 0):
+            at = copy.deepcopy(prev)
+            at.append([i , j])
+            result.append(at)
+            getJumps(board, j, jumpMapping, enemyChecker, at, result)
+
+    return result 
 
 def getAllPossibleJumps(board, turn):
     moves = []
@@ -293,20 +300,19 @@ def getAllPossibleJumps(board, turn):
     allyChecker = 1 if(turn == 'w') else 3
     enemyChecker = 3 if(turn == 'w') else 1
 
-    #TODO- finish implementing this
     for i in range(32):
         if(board[i] == allyChecker):
-            for jump in moveMapping[i+1]:
-                at = getJumps(board, i, jump, allyChecker, enemyChecker)
-                if(at != []):
-                    for move in at:
-                        moves.append(move)
+            at = getJumps(board, i, jumpMapping, enemyChecker, [], [])
+            if(at != []):
+                for move in at:
+                    moves.append([i+1, move])
 
     return moves
 
 def getAllPossibleMoves(board, turn):
     moves = getAllPossibleJumps(board, turn)
     if(moves != []):
+        print(moves)
         return moves
     moveMapping = moveMappings[turn]
 
@@ -325,9 +331,6 @@ def getAllPossibleMoves(board, turn):
                 for j in a:
                     if(board[j-1] == 0):
                         moves.append([i, j-1])
-
-    for m in moves:
-        buttons[m[1]]['bg'] = 'blue'
 
     return moves
 
