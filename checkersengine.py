@@ -138,38 +138,71 @@ whiteJumpMapping = {1:[],
                     31:[[26, 22], [27, 24]],
                     32:[[27, 23]]}
 
-kingMoveMapping =  {1:[[5], [6, 10, 15, 19, 24, 28]],
-                    2:[[6, 9, 13], [7, 11, 16, 20]],
-                    3:[[7, 10, 14, 17, 21], [8, 12]],
-                    4:[[8, 11, 15, 18, 22, 25, 29]],
-                    5:[[1], [9, 14, 18, 23, 27, 32]],
-                    6:[[1], [2], [9, 13], [10, 15, 19, 24, 28]],
-                    7:[[2], [3], [10, 14, 17, 21], [11, 16, 20]],
-                    8:[[3], [4], [11, 15, 18, 22, 25, 29], [12]],
-                    9:[[5], [6, 2], [13], [14, 18, 23, 27, 32]],
-                    10:[[6, 1], [7, 3], [14, 17, 21], [15, 19, 24, 28]],
-                    11:[[7, 2], [8, 4], [15, 18, 22, 25, 29], [16, 20]],
-                    12:[[8, 3], [16, 19, 23, 26, 30]],
-                    13:[[9, 6, 2], [17, 22, 26, 31]],
-                    14:[[9, 5], [10, 7, 3], [17, 21], [18, 23, 27, 32]],
-                    15:[[10, 6, 1], [11, 8, 4], [18, 22, 25, 29], [19, 24, 28]],
-                    16:[[11, 7, 2], [12], [19, 23, 26, 30], [20]],
-                    17:[[13], [14, 10, 7, 3], [21], [22, 26, 31]],
-                    18:[[14, 9, 5], [15, 11, 8, 4], [22, 25, 29], [23, 27, 32]],
-                    19:[[15, 10, 6, 1], [16, 12], [23, 26, 30], [24, 28]],
-                    20:[[16, 11, 7, 2], [24, 27, 31]],
-                    21:[[17, 14, 10, 7, 3], [25, 30]],
-                    22:[[17, 13], [18, 15, 11, 8, 4], [25, 29], [26, 31]],
-                    23:[[18, 14, 9, 5], [19, 16, 12], [26, 30], [27, 32]],
-                    24:[[19, 15, 10, 6, 1], [20], [27, 31], [28]],
-                    25:[[21], [22, 18, 15, 11, 8, 4], [29], [30]],
-                    26:[[22, 17, 13], [23, 19, 16, 12], [30], [31]],
-                    27:[[23, 18, 14, 9, 5], [24, 20], [31], [32]],
-                    28:[[24, 19, 15, 10, 6, 1], [32]],
-                    29:[[25, 22, 18, 15, 11, 8, 4]],
-                    30:[[25, 21], [26, 23, 19, 16, 12]],
-                    31:[[26, 22, 17, 13], [27, 24, 20]],
-                    32:[[27, 23, 18, 14, 9, 5], [28]]}
+kingMoveMapping =  {1:[5, 6],
+                    2:[6, 7],
+                    3:[7, 8],
+                    4:[8],
+                    5:[1, 9],
+                    6:[1, 2, 9, 10],
+                    7:[2, 3, 10, 11],
+                    8:[3, 4, 11, 12],
+                    9:[5, 6, 13, 14],
+                    10:[6, 7, 14, 15],
+                    11:[7, 8, 15, 16],
+                    12:[8, 16],
+                    13:[9, 17],
+                    14:[9, 10, 17, 18],
+                    15:[10, 11, 18, 19],
+                    16:[11, 12, 19, 20],
+                    17:[13, 14, 21, 22],
+                    18:[14, 15, 22, 23],
+                    19:[15, 16, 23, 24],
+                    20:[16, 24],
+                    21:[17, 25],
+                    22:[17, 18, 25, 26],
+                    23:[18, 19, 26, 27],
+                    24:[19, 20, 27, 28],
+                    25:[21, 22, 29, 30],
+                    26:[22, 23, 30, 31],
+                    27:[23, 24, 31, 32],
+                    28:[24, 32],
+                    29:[25],
+                    30:[25, 26],
+                    31:[26, 27],
+                    32:[27, 28]}
+
+kingJumpMapping =  {1:[[6, 10]],
+                    2:[[6, 9], [7, 11]],
+                    3:[[7, 10], [8, 12]],
+                    4:[[8, 11]],
+                    5:[[9, 14]],
+                    6:[[9, 13], [10, 15]],
+                    7:[[10, 14], [11, 16]],
+                    8:[[11, 15]],
+                    9:[[6, 2], [14, 18]],
+                    10:[[6, 1], [7, 3], [14, 17], [15, 19]],
+                    11:[[7, 2], [8, 4], [15, 18], [16, 20]],
+                    12:[[8, 3], [16, 19]],
+                    13:[[9, 6], [17, 22]],
+                    14:[[9, 5], [10, 7], [17, 21], [18, 23]],
+                    15:[[10, 6], [11, 8], [18, 22], [19, 24]],
+                    16:[[11, 7], [19, 23]],
+                    17:[[14, 10], [22, 26]],
+                    18:[[14, 9], [15, 11], [22, 25], [23, 27]],
+                    19:[[15, 10], [16, 12], [23, 26], [24, 28]],
+                    20:[[16, 11], [24, 27]],
+                    21:[[17, 14], [25, 30]],
+                    22:[[17, 13], [18, 15], [25, 29], [26, 31]],
+                    23:[[18, 14], [19, 16], [26, 30], [27, 32]],
+                    24:[[19, 15], [27, 31]],
+                    25:[[22, 18]],
+                    26:[[22, 17], [23, 19]],
+                    27:[[23, 18], [24, 20]],
+                    28:[[24, 19]],
+                    29:[[25, 22]],
+                    30:[[25, 21], [26, 23]],
+                    31:[[26, 22], [27, 24]],
+                    32:[[27, 23]]}
 
 moveMappings = {'w':whiteMoveMapping, 'b':blackMoveMapping}
 jumpMappings = {'w':whiteJumpMapping, 'b':blackJumpMapping}
@@ -282,15 +315,19 @@ def evaluateBoard(board, weights):
             value += (weights[i][j] * features[i][j])
     return value
 
-def getJumps(board, index, jumpMapping, enemyChecker, prev, result):
+def getJumps(board, index, jumpMapping, enemyCheckers, prev, result):
     #i == the jumped over spot, j == the landing spot
     for (i, j) in jumpMapping[index+1]:
-        if(board[i-1] == enemyChecker and board[j-1] == 0):
+        if(board[i-1] in enemyCheckers and board[j-1] == 0):
             at = copy.deepcopy(prev)
             at.append([i , j])
             result.append(at)
             getJumps(board, j, jumpMapping, enemyChecker, at, result)
 
+    return result 
+
+def getKingJumps(board, index, enemyCheckers, prev, result):
+    #TODO- implement this
     return result 
 
 def getAllPossibleJumps(board, turn):
@@ -299,20 +336,24 @@ def getAllPossibleJumps(board, turn):
 
     allyChecker = 1 if(turn == 'w') else 3
     enemyChecker = 3 if(turn == 'w') else 1
+    allyKing = 2 if(turn == 'w') else 4
+    enemyKing = 4 if(turn == 'w') else 2
+    enemyCheckers = [enemyChecker, enemyKing]
 
     for i in range(32):
         if(board[i] == allyChecker):
-            at = getJumps(board, i, jumpMapping, enemyChecker, [], [])
+            at = getJumps(board, i, jumpMapping, enemyCheckers, [], [])
             if(at != []):
                 for move in at:
                     moves.append([i+1, move])
+        elif(board[i] == allyKing):
+            at = getKingJumps(board, i, enemyCheckers, [], [])
 
     return moves
 
 def getAllPossibleMoves(board, turn):
     moves = getAllPossibleJumps(board, turn)
     if(moves != []):
-        print(moves)
         return moves
     moveMapping = moveMappings[turn]
 
@@ -327,10 +368,9 @@ def getAllPossibleMoves(board, turn):
                 if(board[j-1] == 0):
                     moves.append([i, j-1])
         elif(board[i] == allyKing):
-            for a in kingMoveMapping[i+1]:
-                for j in a:
-                    if(board[j-1] == 0):
-                        moves.append([i, j-1])
+            for j in kingMoveMapping[i+1]:
+                if(board[j-1] == 0):
+                    moves.append([i, j-1])
 
     return moves
 
