@@ -1,7 +1,6 @@
-import re, tkFont
+import re, tkFont, copy
 from Tkinter import *
 from functools import partial
-import copy
 
 #the squares that a checker can move into from each position
 blackMoveMapping = {1:[5, 6],
@@ -348,6 +347,9 @@ def getAllPossibleJumps(board, turn):
                     moves.append([i+1, move])
         elif(board[i] == allyKing):
             at = getKingJumps(board, i, enemyCheckers, [], [])
+            if(at != []):
+                for move in at:
+                    moves.append([i+1, move])
 
     return moves
 
