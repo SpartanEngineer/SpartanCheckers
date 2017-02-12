@@ -1,4 +1,4 @@
-import re, tkFont, copy
+import re, tkFont, copy, random
 from Tkinter import *
 from functools import partial
 
@@ -208,76 +208,6 @@ jumpMappings = {'w':whiteJumpMapping, 'b':blackJumpMapping}
 
 initialWeight = 0.5
 
-class CheckersGame:
-    def __init__(self, data):
-        self.eventName = ""
-        self.date = ""
-        self.blackPlayer = ""
-        self.whitePlayer = ""
-        self.site = ""
-        self.result = 0
-        self.moves = []
-        self.parse(data)
-
-    def parse(self, data):
-        n = len(data)
-        lineNum = 0
-        while(lineNum < n and data[lineNum][0] == '['):
-            line = data[lineNum]
-            if('"' in line):
-                content = line.split('"')[1] #get the content in between quotes
-                if(line.startswith('[Event')):
-                    self.eventName = content
-                elif(line.startswith('[Date')):
-                    self.date = content 
-                elif(line.startswith('[Black')):
-                    self.blackPlayer = content
-                elif(line.startswith('[White')):
-                    self.whitePlayer = content
-                elif(line.startswith('[Site')):
-                    self.site = content
-                elif(line.startswith('[Result')):
-                    resultConv = {'1/2-1/2':0, '1-0':1, '0-1':2}
-                    self.result = resultConv[content]
-            lineNum += 1
-
-        while(lineNum < n):
-            line = re.compile("[0-9]+\.").split(data[lineNum])
-            split2 = "".join(line).split(' ')
-            for s in split2:
-                if(s != ''):
-                    self.moves.append(s)
-            lineNum += 1
-
-        self.moves.pop() #get rid of the game result (which is the last item in the split)
-
-    def __str__(self):
-        d = {}
-        d['Event'] = self.eventName
-        d['Date'] = self.date
-        d['Black'] = self.blackPlayer
-        d['White'] = self.whitePlayer
-        d['Site'] = self.site
-        d['Result'] = self.result
-        #d['Moves'] = self.moves
-        return str(d) 
-
-def parsePdnFile(filePath):
-    data = [line.strip() for line in open(filePath, 'r')]
-    games = []
-    lastLine = 0
-    atLine = 0
-    while(lastLine < len(data)):
-        while(data[atLine] != ''):
-            atLine += 1
-
-        game = CheckersGame(data[lastLine:atLine])
-        games.append(game)
-        atLine += 1
-        lastLine = atLine
-
-    return games
-
 #0 == empty
 #1 == black checker
 #2 == black king
@@ -388,6 +318,15 @@ def getAllPossibleMoves(board, turn):
 
     return moves
 
+def crownPieces(board, turn):
+    for i in range(0, 4):
+        if(board[i] == 1):
+            board[i] == 2
+
+    for i in range(28, 32):
+        if(board[i] == 3):
+            board[i] = 4
+
 def getAllPossibleBoards(board, turn):
     boards = []
     jumps = getAllPossibleJumps(board, turn)
@@ -399,6 +338,7 @@ def getAllPossibleBoards(board, turn):
             newPosition = moves[len(moves)-1][1]
             newBoard[newPosition] = newBoard[i]
             newBoard[i] = 0
+            crownPieces(newBoard, turn)
             boards.append(newBoard)
     else:
         moves = getAllPossibleMoves(board, turn)
@@ -406,16 +346,25 @@ def getAllPossibleBoards(board, turn):
             newBoard = copy.deepcopy(board)
             newBoard[j] = newBoard[i]
             newBoard[i] = 0
+            crownPieces(newBoard, turn)
             boards.append(newBoard)
 
     return boards
 
-filePath = 'dataset/OCA_2.0.pdn'
-#games = parsePdnFile(filePath)
+def isGameOver(boards):
+    return boards == []
+
+def getRandomBoard(boards):
+    randomNum = random.randint(0, len(boards)-1)
+    return boards[randomNum]
+
+def makeRandomMove(board, turn):
+    boards = getAllPossibleBoards(board, turn)
+    board = getRandomBoard(boards)
+
 board = makeBoard()
 #print(getFeatures(board))
 #print(evaluateBoard(board, makeInitialWeights()))
-#print("finished parsing")
 
 # GUI Code
 
@@ -457,23 +406,24 @@ def buttonClick(zeroIndex):
     #        buttons[k]['bg'] = 'blue'
 
 
-buttonUpdateText = {0: '', 1:'w', 2:'wK', 3:'b', 4:'bK'}
+#buttonUpdateText = {0: '', 1:'w', 2:'wK', 3:'b', 4:'bK'}
+buttonUpdateText = {0: '', 1:'1', 2:'2', 3:'3', 4:'4'}
 def updateButtons():
     for i in range(32):
         buttons[i]['text'] = buttonUpdateText[board[i]] 
-        buttons[i]['bg'] = 'white'
+        buttons[i]['bg'] = 'grey'
 
 root = Tk()
 Grid.rowconfigure(root, 0, weight=1)
 Grid.columnconfigure(root, 0, weight=1)
-root.minsize(width=600, height=600)
-root.maxsize(width=600, height=600)
+root.minsize(width=800, height=800)
+root.maxsize(width=800, height=800)
 root.wm_title("Checkers!!!")
 
 frame = Frame(root)
 frame.grid(row=0, column=0, sticky=N+S+E+W)
 
-buttonFont = tkFont.Font(family='Helvetica', size=36, weight='bold')
+buttonFont = tkFont.Font(family='Helvetica', size=24, weight='bold')
 buttons = []
 i, j, num = 0, 0, 0
 for r in range(8):
@@ -484,12 +434,12 @@ for r in range(8):
         button = Button(frame, text="", command=partial(buttonClick, i)) 
         button.grid(row=r, column=c, sticky=N+S+E+W)
         button['font'] = buttonFont
-        button['bg'] = 'grey'
+        button['bg'] = 'white'
         button['state'] = 'disabled'
         if(j % 2 == num):
             i += 1
             button['text'] = str(i) 
-            button['bg'] = 'white'
+            button['bg'] = 'grey'
             button['state'] = 'normal'
             buttons.append(button)
 
