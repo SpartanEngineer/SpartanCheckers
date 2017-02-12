@@ -316,17 +316,31 @@ def evaluateBoard(board, weights):
 
 def getJumps(board, index, jumpMapping, enemyCheckers, prev, result):
     #i == the jumped over spot, j == the landing spot
-    for (i, j) in jumpMapping[index+1]:
-        if(board[i-1] in enemyCheckers and board[j-1] == 0):
+    for (iK, jK) in jumpMapping[index+1]:
+        i, j = iK-1, jK-1
+        if(board[i] in enemyCheckers and board[j] == 0):
             at = copy.deepcopy(prev)
             at.append([i , j])
             result.append(at)
-            getJumps(board, j, jumpMapping, enemyChecker, at, result)
+            getJumps(board, j, jumpMapping, enemyCheckers, at, result)
 
     return result 
 
-def getKingJumps(board, index, enemyCheckers, prev, result):
-    #TODO- implement this
+def getKingJumps(board, index, allyKing, enemyCheckers, prev, result):
+    for (iK, jK) in kingJumpMapping[index+1]:
+        i, j = iK-1, jK-1
+        if(board[i] in enemyCheckers and board[j] == 0):
+            #set up the next board... we need to make sure the king can't jump
+            #back over where it just jumped
+            newBoard = copy.deepcopy(board)
+            newBoard[index] = 0
+            newBoard[i] = 0
+            newBoard[j] = allyKing
+            at = copy.deepcopy(prev)
+            at.append([i, j])
+            result.append(at)
+            getKingJumps(newBoard, j, allyKing, enemyCheckers, at, result)
+
     return result 
 
 def getAllPossibleJumps(board, turn):
@@ -344,19 +358,17 @@ def getAllPossibleJumps(board, turn):
             at = getJumps(board, i, jumpMapping, enemyCheckers, [], [])
             if(at != []):
                 for move in at:
-                    moves.append([i+1, move])
+                    moves.append([i, move])
         elif(board[i] == allyKing):
-            at = getKingJumps(board, i, enemyCheckers, [], [])
+            at = getKingJumps(board, i, allyKing, enemyCheckers, [], [])
             if(at != []):
                 for move in at:
-                    moves.append([i+1, move])
+                    moves.append([i, move])
 
     return moves
 
 def getAllPossibleMoves(board, turn):
-    moves = getAllPossibleJumps(board, turn)
-    if(moves != []):
-        return moves
+    moves = []
     moveMapping = moveMappings[turn]
 
     allyChecker = 1 if(turn == 'w') else 3
@@ -376,6 +388,28 @@ def getAllPossibleMoves(board, turn):
 
     return moves
 
+def getAllPossibleBoards(board, turn):
+    boards = []
+    jumps = getAllPossibleJumps(board, turn)
+    if(jump != []):
+        for (i, moves) in jumps:
+            newBoard = copy.deepcopy(board)
+            for (j, k) in moves:
+                newBoard[j] = 0
+            newPosition = moves[len(moves)-1][1]
+            newBoard[newPosition] = newBoard[i]
+            newBoard[i] = 0
+            boards.append(newBoard)
+    else:
+        moves = getAllPossibleMoves(board, turn)
+        for (i, j) in moves:
+            newBoard = copy.deepcopy(board)
+            newBoard[j] = newBoard[i]
+            newBoard[i] = 0
+            boards.append(newBoard)
+
+    return boards
+
 filePath = 'dataset/OCA_2.0.pdn'
 #games = parsePdnFile(filePath)
 board = makeBoard()
@@ -385,15 +419,49 @@ board = makeBoard()
 
 # GUI Code
 
+def displayAllPossibleJumpsOrMoves(board, turn):
+    jumps = getAllPossibleJumps(board, turn)
+    if(jumps != []):
+        for(i, moves) in jumps:
+            buttons[i]['bg'] = 'green'
+            for (j, k) in moves:
+                buttons[j]['bg'] = 'red'
+                buttons[k]['bg'] = 'blue'
+    else:
+        moves = getAllPossibleMoves(board, turn)
+        for (i, j) in moves:
+            buttons[i]['bg'] = 'green'
+            buttons[j]['bg'] = 'blue'
+
 def buttonClick(zeroIndex):
-    oneIndex = zeroIndex+1
-    for button in buttons:
-        button['bg'] = 'grey'
+    updateButtons()
+    displayAllPossibleJumpsOrMoves(board, 'b')
+
+    #moves = getKingJumps(board, zeroIndex, 4, [1, 2], [], [])
+    #moves = getJumps(board, zeroIndex, blackJumpMapping, [1, 2], [], [])
+    #for m in moves:
+    #    for(i, j) in m:
+    #        buttons[i-1]['bg'] = 'red'
+    #        buttons[j-1]['bg'] = 'blue'
+
+    #moves = getAllPossibleMoves(board, 'b')
+    #for (i, j) in moves:
+    #    buttons[i]['bg'] = 'green'
+    #    buttons[j]['bg'] = 'blue'
+
+    #jumps = getAllPossibleJumps(board, 'b')
+    #for (i, moves) in jumps:
+    #    buttons[i]['bg'] = 'green'
+    #    for (j, k) in moves:
+    #        buttons[j]['bg'] = 'red'
+    #        buttons[k]['bg'] = 'blue'
+
 
 buttonUpdateText = {0: '', 1:'w', 2:'wK', 3:'b', 4:'bK'}
 def updateButtons():
     for i in range(32):
         buttons[i]['text'] = buttonUpdateText[board[i]] 
+        buttons[i]['bg'] = 'white'
 
 root = Tk()
 Grid.rowconfigure(root, 0, weight=1)
@@ -416,11 +484,12 @@ for r in range(8):
         button = Button(frame, text="", command=partial(buttonClick, i)) 
         button.grid(row=r, column=c, sticky=N+S+E+W)
         button['font'] = buttonFont
+        button['bg'] = 'grey'
         button['state'] = 'disabled'
         if(j % 2 == num):
             i += 1
             button['text'] = str(i) 
-            button['bg'] = 'grey'
+            button['bg'] = 'white'
             button['state'] = 'normal'
             buttons.append(button)
 
@@ -431,5 +500,11 @@ for r in range(8):
 for c in range(8):
     Grid.columnconfigure(frame, c, weight=1)
 
+board[13] = 1
+board[17] = 0
+board[21] = 1
+board[24] = 0
+board[14] = 1
+board[10] = 0
 updateButtons()
 root.mainloop()
