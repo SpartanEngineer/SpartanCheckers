@@ -1,6 +1,7 @@
-import re, tkFont, copy, random
+import re, tkFont, copy, random, time
 from Tkinter import *
 from functools import partial
+import cPickle as pickle
 
 #the squares that a checker can move into from each position
 blackMoveMapping = {1:[5, 6],
@@ -206,6 +207,9 @@ kingJumpMapping =  {1:[[6, 10]],
 moveMappings = {'w':whiteMoveMapping, 'b':blackMoveMapping}
 jumpMappings = {'w':whiteJumpMapping, 'b':blackJumpMapping}
 
+weightsFileName = 'weights.p'
+
+learnConstant = 0.1 #learning constant
 initialWeight = 0.5
 
 #0 == empty
@@ -236,13 +240,51 @@ def getFeatures(board):
         features.append(a)
     return features
 
-def evaluateBoard(board, weights):
-    features = getFeatures(board)
+def evaluateFeatures(features, weights):
     value = 0
     for i in range(4):
         for j in range(32):
             value += (weights[i][j] * features[i][j])
+
     return value
+
+def evaluateBoard(board, weights):
+    return evaluateFeatures(getFeatures(board), weights)
+
+def updateWeights(trainingData, weights, didWin):
+    n = len(trainingData)
+    estimates = [evaluateBoard(x, weights) for x in trainingData]
+    values = [0 for x in range(n)]
+    if(didWin == True):
+        values[len(values)-1] = 100
+    else:
+        values[len(values)-1] = -100
+
+    for i in range(n-1):
+        values[i] = estimates[i+1]
+
+    for i in range(n):
+        board = trainingData[i]
+        features = getFeatures(board)
+        value = values[i]
+        estimate = estimates[i] 
+
+        #update our weights
+        for j in range(len(weights)):
+            for k in range(len(weights[j])):
+                weights[j][k] = weights[j][k] + (learnConstant*(value-estimate)*features[j][k])
+
+
+def getBestPossibleBoard(boards, weights):
+    values = [evaluateBoard(b, weights) for b in boards]
+    maxValue = values[0]
+    maxBoard = boards[0]
+    for i in range(1, len(boards)):
+        if(values[i] > maxValue):
+            maxValue = values[i]
+            maxBoard = boards[i]
+
+    return maxBoard
 
 def getJumps(board, index, jumpMapping, enemyCheckers, prev, result):
     #i == the jumped over spot, j == the landing spot
@@ -330,7 +372,7 @@ def crownPieces(board, turn):
 def getAllPossibleBoards(board, turn):
     boards = []
     jumps = getAllPossibleJumps(board, turn)
-    if(jump != []):
+    if(jumps != []):
         for (i, moves) in jumps:
             newBoard = copy.deepcopy(board)
             for (j, k) in moves:
@@ -358,13 +400,79 @@ def getRandomBoard(boards):
     randomNum = random.randint(0, len(boards)-1)
     return boards[randomNum]
 
-def makeRandomMove(board, turn):
+#training our AI
+iterations = 100
+print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
+
+startTime = time.time()
+
+#theWeights = pickle.load(open(weightsFileName, "rb")) 
+#blackWeights, whiteWeights = theWeights
+
+blackWeights = makeInitialWeights()
+whiteWeights = makeInitialWeights()
+
+#train the black AI against a random AI
+for i in range(iterations):
+    turn = 'b'
+    board = makeBoard()
     boards = getAllPossibleBoards(board, turn)
-    board = getRandomBoard(boards)
+    trainingData = []
+    while(not isGameOver(boards)):
+        if(turn == 'b'):
+            bestBoard = getBestPossibleBoard(boards, blackWeights)
+            board = bestBoard
+            trainingData.append(board) 
+            turn = 'w'
+        else:
+            randomBoard = getRandomBoard(boards)
+            board = randomBoard
+            turn = 'b'
+
+        boards = getAllPossibleBoards(board, turn)
+
+    didWin = (turn == 'w')
+    updateWeights(trainingData, blackWeights, didWin)
+
+#train the white AI against a random AI
+for i in range(iterations):
+    turn = 'b'
+    board = makeBoard()
+    boards = getAllPossibleBoards(board, turn)
+    trainingData = []
+    while(not isGameOver(boards)):
+        if(turn == 'b'):
+            randomBoard = getRandomBoard(boards)
+            board = randomBoard
+            turn = 'w'
+        else:
+            bestBoard = getBestPossibleBoard(boards, whiteWeights)
+            board = bestBoard
+            trainingData.append(board) 
+            turn = 'b'
+
+        boards = getAllPossibleBoards(board, turn)
+
+    didWin = (turn == 'b')
+    updateWeights(trainingData, whiteWeights, didWin)
+
+print("--------------------")
+print('blackWeights:')
+print("--------------------")
+print(blackWeights)
+print("--------------------")
+print('whiteWeights:')
+print("--------------------")
+print(whiteWeights)
+print("--------------------")
+
+#theWeights = [blackWeights, whiteWeights]
+#pickle.dump(theWeights, open(weightsFileName, "wb")) 
+
+endTime = time.time()
+print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTime)))
 
 board = makeBoard()
-#print(getFeatures(board))
-#print(evaluateBoard(board, makeInitialWeights()))
 
 # GUI Code
 
@@ -385,26 +493,6 @@ def displayAllPossibleJumpsOrMoves(board, turn):
 def buttonClick(zeroIndex):
     updateButtons()
     displayAllPossibleJumpsOrMoves(board, 'b')
-
-    #moves = getKingJumps(board, zeroIndex, 4, [1, 2], [], [])
-    #moves = getJumps(board, zeroIndex, blackJumpMapping, [1, 2], [], [])
-    #for m in moves:
-    #    for(i, j) in m:
-    #        buttons[i-1]['bg'] = 'red'
-    #        buttons[j-1]['bg'] = 'blue'
-
-    #moves = getAllPossibleMoves(board, 'b')
-    #for (i, j) in moves:
-    #    buttons[i]['bg'] = 'green'
-    #    buttons[j]['bg'] = 'blue'
-
-    #jumps = getAllPossibleJumps(board, 'b')
-    #for (i, moves) in jumps:
-    #    buttons[i]['bg'] = 'green'
-    #    for (j, k) in moves:
-    #        buttons[j]['bg'] = 'red'
-    #        buttons[k]['bg'] = 'blue'
-
 
 #buttonUpdateText = {0: '', 1:'w', 2:'wK', 3:'b', 4:'bK'}
 buttonUpdateText = {0: '', 1:'1', 2:'2', 3:'3', 4:'4'}
@@ -450,11 +538,5 @@ for r in range(8):
 for c in range(8):
     Grid.columnconfigure(frame, c, weight=1)
 
-board[13] = 1
-board[17] = 0
-board[21] = 1
-board[24] = 0
-board[14] = 1
-board[10] = 0
 updateButtons()
 root.mainloop()
