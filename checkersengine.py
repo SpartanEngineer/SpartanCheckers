@@ -401,7 +401,7 @@ def getRandomBoard(boards):
     return boards[randomNum]
 
 #training our AI
-iterations = 100
+iterations = 10
 print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
 
 startTime = time.time()
@@ -494,14 +494,22 @@ def buttonClick(zeroIndex):
     updateButtons()
     displayAllPossibleJumpsOrMoves(board, 'b')
 
+root = Tk()
+
+whiteCheckerImage = PhotoImage(file='checker_images/whiteChecker.png')
+blackCheckerImage = PhotoImage(file='checker_images/blackChecker.png')
+whiteCheckerKingImage = PhotoImage(file='checker_images/whiteCheckerKing.png')
+blackCheckerKingImage = PhotoImage(file='checker_images/blackCheckerKing.png')
+buttonUpdateImage = {0: None, 1:whiteCheckerImage, 2:whiteCheckerKingImage,
+        3:blackCheckerImage, 4:blackCheckerKingImage}
 #buttonUpdateText = {0: '', 1:'w', 2:'wK', 3:'b', 4:'bK'}
 buttonUpdateText = {0: '', 1:'1', 2:'2', 3:'3', 4:'4'}
 def updateButtons():
     for i in range(32):
-        buttons[i]['text'] = buttonUpdateText[board[i]] 
+        #buttons[i]['text'] = buttonUpdateText[board[i]] 
         buttons[i]['bg'] = 'grey'
+        buttons[i].config(image=buttonUpdateImage[board[i]])
 
-root = Tk()
 Grid.rowconfigure(root, 0, weight=1)
 Grid.columnconfigure(root, 0, weight=1)
 root.minsize(width=800, height=800)
@@ -526,7 +534,7 @@ for r in range(8):
         button['state'] = 'disabled'
         if(j % 2 == num):
             i += 1
-            button['text'] = str(i) 
+            #button['text'] = str(i) 
             button['bg'] = 'grey'
             button['state'] = 'normal'
             buttons.append(button)
