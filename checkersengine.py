@@ -512,8 +512,8 @@ def updateButtons():
 
 Grid.rowconfigure(root, 0, weight=1)
 Grid.columnconfigure(root, 0, weight=1)
-root.minsize(width=800, height=800)
-root.maxsize(width=800, height=800)
+root.minsize(width=900, height=900)
+root.maxsize(width=900, height=900)
 root.wm_title("Checkers!!!")
 
 frame = Frame(root)
@@ -532,6 +532,7 @@ for r in range(8):
         button['font'] = buttonFont
         button['bg'] = 'white'
         button['state'] = 'disabled'
+        button.config(height=100, width=100)
         if(j % 2 == num):
             i += 1
             #button['text'] = str(i) 
