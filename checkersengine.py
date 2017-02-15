@@ -1,4 +1,4 @@
-import re, tkFont, copy, random, time
+import re, tkFont, copy, random, time, tkMessageBox
 from Tkinter import *
 from functools import partial
 import cPickle as pickle
@@ -360,10 +360,10 @@ def getAllPossibleMoves(board, turn):
 
     return moves
 
-def crownPieces(board, turn):
+def crownPieces(board):
     for i in range(0, 4):
         if(board[i] == 1):
-            board[i] == 2
+            board[i] = 2
 
     for i in range(28, 32):
         if(board[i] == 3):
@@ -380,7 +380,7 @@ def getAllPossibleBoards(board, turn):
             newPosition = moves[len(moves)-1][1]
             newBoard[newPosition] = newBoard[i]
             newBoard[i] = 0
-            crownPieces(newBoard, turn)
+            crownPieces(newBoard)
             boards.append(newBoard)
     else:
         moves = getAllPossibleMoves(board, turn)
@@ -388,7 +388,7 @@ def getAllPossibleBoards(board, turn):
             newBoard = copy.deepcopy(board)
             newBoard[j] = newBoard[i]
             newBoard[i] = 0
-            crownPieces(newBoard, turn)
+            crownPieces(newBoard)
             boards.append(newBoard)
 
     return boards
@@ -401,7 +401,7 @@ def getRandomBoard(boards):
     return boards[randomNum]
 
 #training our AI
-iterations = 10
+iterations = 0
 print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
 
 startTime = time.time()
@@ -476,8 +476,16 @@ board = makeBoard()
 
 # GUI Code
 
-def displayAllPossibleJumpsOrMoves(board, turn):
-    jumps = getAllPossibleJumps(board, turn)
+pieceSelected = False
+currentTurn = 'b'
+currentJumps = getAllPossibleJumps(board, 'b')
+currentMoves = getAllPossibleMoves(board, 'b')
+currentBoards = getAllPossibleBoards(board, 'b')
+currentIndexes = {} 
+currentGameOngoing = True
+currentGameWinner = 'b'
+
+def displayAllPossibleJumpsOrMoves(board, jumps, moves):
     if(jumps != []):
         for(i, moves) in jumps:
             buttons[i]['bg'] = 'green'
@@ -485,28 +493,79 @@ def displayAllPossibleJumpsOrMoves(board, turn):
                 buttons[j]['bg'] = 'red'
                 buttons[k]['bg'] = 'blue'
     else:
-        moves = getAllPossibleMoves(board, turn)
         for (i, j) in moves:
             buttons[i]['bg'] = 'green'
             buttons[j]['bg'] = 'blue'
 
+def displayPossibleJumpsOrMoves(board, jumps, moves, index):
+    global currentIndexes
+    currentIndexes = {}
+    result = False
+    if(jumps != []):
+        for(i, moves) in jumps:
+            if(i == index):
+                result = True
+                buttons[i]['bg'] = 'green'
+                for (j, k) in moves:
+                    buttons[j]['bg'] = 'red'
+                    buttons[k]['bg'] = 'blue'
+                    currentIndexes[k] = [i, moves] 
+    else:
+        for (i, j) in moves:
+            if(i == index):
+                result = True
+                buttons[i]['bg'] = 'green'
+                buttons[j]['bg'] = 'blue'
+                currentIndexes[j] = [i]
+
+    return result
+
 def buttonClick(zeroIndex):
-    updateButtons()
-    displayAllPossibleJumpsOrMoves(board, 'b')
+    global pieceSelected, currentIndexes, currentJumps, currentMoves
+    global currentTurn, currentBoards, currentGameOngoing
+    updateButtons(board)
+    if(pieceSelected == True and zeroIndex in currentIndexes):
+        pieceSelected = False
+        startIndex = currentIndexes[zeroIndex][0]
+        board[zeroIndex] = board[startIndex]
+        board[startIndex] = 0
+
+        #handle jumps
+        if(len(currentIndexes[zeroIndex]) > 1):
+            for (i, j) in currentIndexes[zeroIndex][1]:
+                board[i] = 0
+                if(board[j] == zeroIndex):
+                    break
+
+        crownPieces(board)
+        updateButtons(board)
+        if(currentTurn == 'b'):
+            currentTurn = 'w'
+        else:
+            currentTurn = 'b'
+        currentJumps = getAllPossibleJumps(board, currentTurn)
+        currentMoves = getAllPossibleMoves(board, currentTurn)
+        currentIndexes = {}
+        currentBoards = getAllPossibleBoards(board, currentTurn)
+        if(isGameOver(currentBoards)):
+            winner = 'black' if(currentTurn == 'w') else 'white'
+            tkMessageBox.showinfo('Game Over!', 'Game is over: {0} wins!'.format(winner))
+            currentGameOngoing = False
+    else:
+        pieceSelected = displayPossibleJumpsOrMoves(board, currentJumps, currentMoves, zeroIndex)
 
 root = Tk()
 
-whiteCheckerImage = PhotoImage(file='checker_images/whiteChecker.png')
-blackCheckerImage = PhotoImage(file='checker_images/blackChecker.png')
-whiteCheckerKingImage = PhotoImage(file='checker_images/whiteCheckerKing.png')
-blackCheckerKingImage = PhotoImage(file='checker_images/blackCheckerKing.png')
-buttonUpdateImage = {0: None, 1:whiteCheckerImage, 2:whiteCheckerKingImage,
+imagesFolder = 'checker_images'
+separator = '/'
+whiteCheckerImage = PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')
+blackCheckerImage = PhotoImage(file=imagesFolder + separator + 'blackChecker.png')
+whiteCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'whiteCheckerKing.png')
+blackCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'blackCheckerKing.png')
+buttonUpdateImage = {0: '', 1:whiteCheckerImage, 2:whiteCheckerKingImage,
         3:blackCheckerImage, 4:blackCheckerKingImage}
-#buttonUpdateText = {0: '', 1:'w', 2:'wK', 3:'b', 4:'bK'}
-buttonUpdateText = {0: '', 1:'1', 2:'2', 3:'3', 4:'4'}
-def updateButtons():
+def updateButtons(board):
     for i in range(32):
-        #buttons[i]['text'] = buttonUpdateText[board[i]] 
         buttons[i]['bg'] = 'grey'
         buttons[i].config(image=buttonUpdateImage[board[i]])
 
@@ -535,7 +594,7 @@ for r in range(8):
         button.config(height=100, width=100)
         if(j % 2 == num):
             i += 1
-            #button['text'] = str(i) 
+            #button['text'] = str(i) #this displays the index for each board position
             button['bg'] = 'grey'
             button['state'] = 'normal'
             buttons.append(button)
@@ -547,5 +606,5 @@ for r in range(8):
 for c in range(8):
     Grid.columnconfigure(frame, c, weight=1)
 
-updateButtons()
+updateButtons(board)
 root.mainloop()
