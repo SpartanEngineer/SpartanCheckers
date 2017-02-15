@@ -401,7 +401,7 @@ def getRandomBoard(boards):
     return boards[randomNum]
 
 #training our AI
-iterations = 0
+iterations = 10
 print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
 
 startTime = time.time()
