@@ -401,7 +401,7 @@ def getRandomBoard(boards):
     return boards[randomNum]
 
 #training our AI
-iterations = 10
+iterations = 0
 print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
 
 startTime = time.time()
@@ -475,15 +475,28 @@ print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTi
 board = makeBoard()
 
 # GUI Code
+weightsMapping = {'b': blackWeights, 'w': whiteWeights}
 
-pieceSelected = False
-currentTurn = 'b'
-currentJumps = getAllPossibleJumps(board, 'b')
-currentMoves = getAllPossibleMoves(board, 'b')
-currentBoards = getAllPossibleBoards(board, 'b')
-currentIndexes = {} 
-currentGameOngoing = True
-currentGameWinner = 'b'
+def startGame(playerFirst):
+    global pieceSelected, currentIndexes, currentJumps, currentMoves
+    global currentTurn, currentBoards, currentGameOngoing
+    global playerTurn, computerTurn, board
+
+    board = makeBoard()
+    pieceSelected = False
+    currentTurn = 'b'
+    currentJumps = getAllPossibleJumps(board, 'b')
+    currentMoves = getAllPossibleMoves(board, 'b')
+    currentBoards = getAllPossibleBoards(board, 'b')
+    currentIndexes = {} 
+    currentGameOngoing = True
+    currentGameWinner = 'b'
+    playerTurn = 'b' if(playerFirst) else 'w'
+    computerTurn = 'w' if(playerFirst) else 'b'
+
+    updateButtons(board)
+    if(computerTurn == 'b'):
+        doComputerTurn()
 
 def displayAllPossibleJumpsOrMoves(board, jumps, moves):
     if(jumps != []):
@@ -520,9 +533,36 @@ def displayPossibleJumpsOrMoves(board, jumps, moves, index):
 
     return result
 
+def nextTurn():
+    global board, currentJumps, currentMoves, currentIndexes, currentBoards
+    global currentGameOngoing, currentTurn
+    crownPieces(board)
+    updateButtons(board)
+    if(currentTurn == 'b'):
+        currentTurn = 'w'
+    else:
+        currentTurn = 'b'
+    currentJumps = getAllPossibleJumps(board, currentTurn)
+    currentMoves = getAllPossibleMoves(board, currentTurn)
+    currentIndexes = {}
+    currentBoards = getAllPossibleBoards(board, currentTurn)
+    if(isGameOver(currentBoards)):
+        winner = 'black' if(currentTurn == 'w') else 'white'
+        tkMessageBox.showinfo('Game Over!', 'Game is over: {0} wins!'.format(winner))
+        currentGameOngoing = False
+
+def doComputerTurn():
+    weights = weightsMapping[computerTurn] 
+    global board
+    board = getBestPossibleBoard(currentBoards, weights)
+    nextTurn()
+
 def buttonClick(zeroIndex):
+    global currentGameOngoing
+    if(not currentGameOngoing):
+        return
     global pieceSelected, currentIndexes, currentJumps, currentMoves
-    global currentTurn, currentBoards, currentGameOngoing
+    global currentTurn, currentBoards
     updateButtons(board)
     if(pieceSelected == True and zeroIndex in currentIndexes):
         pieceSelected = False
@@ -536,21 +576,10 @@ def buttonClick(zeroIndex):
                 board[i] = 0
                 if(board[j] == zeroIndex):
                     break
-
-        crownPieces(board)
-        updateButtons(board)
-        if(currentTurn == 'b'):
-            currentTurn = 'w'
-        else:
-            currentTurn = 'b'
-        currentJumps = getAllPossibleJumps(board, currentTurn)
-        currentMoves = getAllPossibleMoves(board, currentTurn)
-        currentIndexes = {}
-        currentBoards = getAllPossibleBoards(board, currentTurn)
-        if(isGameOver(currentBoards)):
-            winner = 'black' if(currentTurn == 'w') else 'white'
-            tkMessageBox.showinfo('Game Over!', 'Game is over: {0} wins!'.format(winner))
-            currentGameOngoing = False
+        
+        nextTurn()
+        if(currentGameOngoing):
+            doComputerTurn()
     else:
         pieceSelected = displayPossibleJumpsOrMoves(board, currentJumps, currentMoves, zeroIndex)
 
@@ -607,4 +636,5 @@ for c in range(8):
     Grid.columnconfigure(frame, c, weight=1)
 
 updateButtons(board)
+startGame(False)
 root.mainloop()
