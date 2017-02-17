@@ -399,7 +399,26 @@ def getRandomBoard(boards):
     randomNum = random.randint(0, len(boards)-1)
     return boards[randomNum]
 
-def trainAi(iterations):
+def updateAiProgress(whichAi, topLevel, progressVars, timeLabels, i, iterations,
+        iterationsDoubled, startTime):
+    if(whichAi != None and topLevel != None and progressVars != None and timeLabels != None):
+        x = i+1.0
+        amt = int((x / iterations) * 100)
+        timeRunning = time.time() - startTime
+        if(whichAi == 'b'):
+            timePer = timeRunning / x
+            timeLeft = timePer * (iterationsDoubled - x)
+        else:
+            y = x + iterations
+            timePer = timeRunning / y 
+            timeLeft = timePer * (iterationsDoubled - y)
+        whichPVar = 0 if(whichAi == 'b') else 1
+        progressVars[whichPVar].set(amt)
+        timeLabels[0]['text'] = 'Est: {0} seconds left'.format(int(timeLeft)) 
+        timeLabels[1]['text'] = 'Time running: {0} seconds'.format(int(timeRunning))
+        topLevel.update()
+
+def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
     #training our AI
     print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
 
@@ -407,6 +426,13 @@ def trainAi(iterations):
 
     blackWeights = makeInitialWeights()
     whiteWeights = makeInitialWeights()
+
+    iterationsDoubled = iterations*2
+
+    if(progressVars != None and topLevel != None):
+        progressVars[0].set(0)
+        progressVars[1].set(0)
+        topLevel.update()
 
     #train the black AI against a random AI
     for i in range(iterations):
@@ -430,6 +456,10 @@ def trainAi(iterations):
         didWin = (turn == 'w')
         updateWeights(trainingData, blackWeights, didWin)
 
+
+        updateAiProgress('b', topLevel, progressVars, timeLabels, i, iterations,
+                iterationsDoubled, startTime)
+
     #train the white AI against a random AI
     for i in range(iterations):
         turn = 'b'
@@ -451,6 +481,9 @@ def trainAi(iterations):
 
         didWin = (turn == 'b')
         updateWeights(trainingData, whiteWeights, didWin)
+
+        updateAiProgress('w', topLevel, progressVars, timeLabels, i, iterations,
+                iterationsDoubled, startTime)
 
     endTime = time.time()
     print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTime)))
@@ -486,41 +519,41 @@ def cancelAiTraining(topLevel):
     topLevel.grab_release()
     topLevel.destroy()
 
-def startAiTraining(iterationEntry, topLevel):
+def startAiTraining(iterationEntry, topLevel, progressVars, timeLabels):
     try:
         iterations = int(iterationEntry.get())
     except ValueError:
         print('iterations must be a valid integer value')
     else:
-        theWeights = trainAi(iterations)
+        theWeights = trainAi(iterations, topLevel, progressVars, timeLabels)
         global blackWeights, whiteWeights
         blackWeights = theWeights[0]
         whiteWeights = theWeights[1]
         print(theWeights)
-        cancelAiTraining(topLevel)
 
 def doAiTraining(root):
     #TODO-finish implementing progress updating
     #defining our pop up form
     topLevel = Toplevel()
     topLevel.minsize(width=600, height=200)
-    #topLevel.maxsize(width=1000, height=200)
     topLevel.grab_set()
-    topLevel.wm_title("Checkers!!!")
+    topLevel.wm_title("Train a new AI!")
 
     iterationLabel = Label(topLevel, text='# of training iterations:')
     iterationLabel.grid(row=0, column=0, sticky=N+S+E+W)
     iterationEntry = Entry(topLevel)
     iterationEntry.grid(row=0, column=1, sticky=N+S+E+W)
 
-    blackLabel = Label(topLevel, text='BlackAI: -10000/-10000')
+    blackLabel = Label(topLevel, text='BlackAI:')
     blackLabel.grid(row=1, column=0, sticky=N+S+E+W)
-    blackBar = ttk.Progressbar(topLevel, orient='horizontal', mode='determinate')
+    blackAIProgress = IntVar()
+    blackBar = ttk.Progressbar(topLevel, variable=blackAIProgress, maximum=100)
     blackBar.grid(row=1, column=1, sticky=N+S+E+W)
 
-    whiteLabel = Label(topLevel, text='WhiteAI: -10000/-10000')
+    whiteLabel = Label(topLevel, text='WhiteAI:')
     whiteLabel.grid(row=2, column=0, sticky=N+S+E+W)
-    whiteBar = ttk.Progressbar(topLevel, orient='horizontal', mode='determinate')
+    whiteAIProgress = IntVar()
+    whiteBar = ttk.Progressbar(topLevel, variable=whiteAIProgress, maximum=100)
     whiteBar.grid(row=2, column=1, sticky=N+S+E+W)
 
     estimateLabel = Label(topLevel, text='Est: 0 seconds left')
@@ -529,9 +562,10 @@ def doAiTraining(root):
     timeLabel.grid(row=3, column=1, sticky=N+S+E+W)
 
     buttonStart = Button(topLevel, text='Start',
-            command=partial(startAiTraining, iterationEntry, topLevel))
+            command=partial(startAiTraining, iterationEntry, topLevel,
+                [blackAIProgress, whiteAIProgress] , [estimateLabel, timeLabel]))
     buttonStart.grid(row=4, column=0, sticky=N+S+E+W)
-    buttonCancel = Button(topLevel, text='Cancel', command=partial(cancelAiTraining, topLevel))
+    buttonCancel = Button(topLevel, text='Done', command=partial(cancelAiTraining, topLevel))
     buttonCancel.grid(row=4, column=1, sticky=N+S+E+W)
 
     for i in range(5):
