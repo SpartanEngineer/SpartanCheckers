@@ -1,7 +1,7 @@
-import re, tkFont, copy, random, time, tkMessageBox
+import re, tkFont, copy, random, time, tkMessageBox, json, os.path
 from Tkinter import *
+from tkFileDialog import askopenfilename, asksaveasfilename
 from functools import partial
-import cPickle as pickle
 
 #the squares that a checker can move into from each position
 blackMoveMapping = {1:[5, 6],
@@ -207,8 +207,7 @@ kingJumpMapping =  {1:[[6, 10]],
 moveMappings = {'w':whiteMoveMapping, 'b':blackMoveMapping}
 jumpMappings = {'w':whiteJumpMapping, 'b':blackJumpMapping}
 
-weightsFileName = 'weights.p'
-
+weightsFileName = 'weights.json'
 learnConstant = 0.1 #learning constant
 initialWeight = 0.5
 
@@ -400,61 +399,124 @@ def getRandomBoard(boards):
     randomNum = random.randint(0, len(boards)-1)
     return boards[randomNum]
 
-#training our AI
-iterations = 0
-print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
+def trainAi(iterations):
+    #training our AI
+    print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
 
-startTime = time.time()
+    startTime = time.time()
 
-#theWeights = pickle.load(open(weightsFileName, "rb")) 
-#blackWeights, whiteWeights = theWeights
+    blackWeights = makeInitialWeights()
+    whiteWeights = makeInitialWeights()
+
+    #train the black AI against a random AI
+    for i in range(iterations):
+        turn = 'b'
+        board = makeBoard()
+        boards = getAllPossibleBoards(board, turn)
+        trainingData = []
+        while(not isGameOver(boards)):
+            if(turn == 'b'):
+                bestBoard = getBestPossibleBoard(boards, blackWeights)
+                board = bestBoard
+                trainingData.append(board) 
+                turn = 'w'
+            else:
+                randomBoard = getRandomBoard(boards)
+                board = randomBoard
+                turn = 'b'
+
+            boards = getAllPossibleBoards(board, turn)
+
+        didWin = (turn == 'w')
+        updateWeights(trainingData, blackWeights, didWin)
+
+    #train the white AI against a random AI
+    for i in range(iterations):
+        turn = 'b'
+        board = makeBoard()
+        boards = getAllPossibleBoards(board, turn)
+        trainingData = []
+        while(not isGameOver(boards)):
+            if(turn == 'b'):
+                randomBoard = getRandomBoard(boards)
+                board = randomBoard
+                turn = 'w'
+            else:
+                bestBoard = getBestPossibleBoard(boards, whiteWeights)
+                board = bestBoard
+                trainingData.append(board) 
+                turn = 'b'
+
+            boards = getAllPossibleBoards(board, turn)
+
+        didWin = (turn == 'b')
+        updateWeights(trainingData, whiteWeights, didWin)
+
+    endTime = time.time()
+    print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTime)))
+
+    return [blackWeights, whiteWeights]
+
+#might be a good idea to validate that the json conforms to some schema in the future
+def loadWeightsFromJson(fileName):
+    if(os.path.isfile(fileName)):
+        with open(fileName, 'r') as infile:
+            global blackWeights, whiteWeights
+            theWeights = json.load(infile)
+            blackWeights = theWeights[0]
+            whiteWeights = theWeights[1]
+
+def saveWeightsToJson(fileName, blackWeights, whiteWeights):
+    with open(fileName, 'w') as outfile:
+        json.dump([blackWeights, whiteWeights], outfile)
+
+def openJsonFile():
+    fileName = askopenfilename(filetypes=[('json files', '.json')])
+    if(isinstance(fileName, (str, unicode))):
+        loadWeightsFromJson(fileName)
+        print('loaded weights from: {0}'.format(fileName))
+
+def saveJsonFile():
+    fileName = asksaveasfilename(filetypes=[('json files', '.json')])
+    if(isinstance(fileName, (str, unicode))):
+        saveWeightsToJson(fileName, blackWeights, whiteWeights)
+        print('saved weights to: {0}'.format(fileName))
+
+def cancelAiTraining(topLevel):
+    topLevel.grab_release()
+    topLevel.destroy()
+
+def startAiTraining(iterationEntry, topLevel):
+    try:
+        iterations = int(iterationEntry.get())
+    except ValueError:
+        print('iterations must be a valid integer value')
+    else:
+        theWeights = trainAi(iterations)
+        global blackWeights, whiteWeights
+        blackWeights = theWeights[0]
+        whiteWeights = theWeights[1]
+        print(theWeights)
+        cancelAiTraining(topLevel)
+
+def doAiTraining(root):
+    topLevel = Toplevel()
+    topLevel.grab_set()
+    topLevel.wm_title("Checkers!!!")
+    label1 = Label(topLevel, text='Number of training iterations:')
+    label1.pack()
+    iterationEntry = Entry(topLevel)
+    iterationEntry.pack()
+    buttonStart = Button(topLevel, text='Start',
+            command=partial(startAiTraining, iterationEntry, topLevel))
+    buttonStart.pack()
+    buttonCancel = Button(topLevel, text='Cancel', command=partial(cancelAiTraining, topLevel))
+    buttonCancel.pack()
 
 blackWeights = makeInitialWeights()
 whiteWeights = makeInitialWeights()
 
-#train the black AI against a random AI
-for i in range(iterations):
-    turn = 'b'
-    board = makeBoard()
-    boards = getAllPossibleBoards(board, turn)
-    trainingData = []
-    while(not isGameOver(boards)):
-        if(turn == 'b'):
-            bestBoard = getBestPossibleBoard(boards, blackWeights)
-            board = bestBoard
-            trainingData.append(board) 
-            turn = 'w'
-        else:
-            randomBoard = getRandomBoard(boards)
-            board = randomBoard
-            turn = 'b'
-
-        boards = getAllPossibleBoards(board, turn)
-
-    didWin = (turn == 'w')
-    updateWeights(trainingData, blackWeights, didWin)
-
-#train the white AI against a random AI
-for i in range(iterations):
-    turn = 'b'
-    board = makeBoard()
-    boards = getAllPossibleBoards(board, turn)
-    trainingData = []
-    while(not isGameOver(boards)):
-        if(turn == 'b'):
-            randomBoard = getRandomBoard(boards)
-            board = randomBoard
-            turn = 'w'
-        else:
-            bestBoard = getBestPossibleBoard(boards, whiteWeights)
-            board = bestBoard
-            trainingData.append(board) 
-            turn = 'b'
-
-        boards = getAllPossibleBoards(board, turn)
-
-    didWin = (turn == 'b')
-    updateWeights(trainingData, whiteWeights, didWin)
+loadWeightsFromJson(weightsFileName)
 
 print("--------------------")
 print('blackWeights:')
@@ -465,12 +527,6 @@ print('whiteWeights:')
 print("--------------------")
 print(whiteWeights)
 print("--------------------")
-
-#theWeights = [blackWeights, whiteWeights]
-#pickle.dump(theWeights, open(weightsFileName, "wb")) 
-
-endTime = time.time()
-print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTime)))
 
 board = makeBoard()
 
@@ -596,8 +652,15 @@ def buttonClick(zeroIndex):
     else:
         pieceSelected = displayPossibleJumpsOrMoves(board, currentJumps, currentMoves, zeroIndex)
 
+def updateButtons(board):
+    for i in range(32):
+        buttons[i]['bg'] = 'grey'
+        buttons[i].config(image=buttonUpdateImage[board[i]])
+
 root = Tk()
 
+#you have to make the images after instatiating the root Tkinter window for some
+#weird reason
 imagesFolder = 'checker_images'
 separator = '/'
 emptyCheckerImage = PhotoImage(file=imagesFolder + separator + 'emptyChecker.png')
@@ -607,10 +670,6 @@ whiteCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'whiteChecker
 blackCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'blackCheckerKing.png')
 buttonUpdateImage = {0: emptyCheckerImage, 1:whiteCheckerImage, 2:whiteCheckerKingImage,
         3:blackCheckerImage, 4:blackCheckerKingImage}
-def updateButtons(board):
-    for i in range(32):
-        buttons[i]['bg'] = 'grey'
-        buttons[i].config(image=buttonUpdateImage[board[i]])
 
 Grid.rowconfigure(root, 0, weight=1)
 Grid.columnconfigure(root, 0, weight=1)
@@ -674,9 +733,18 @@ displayMovesButton.grid(row=3, column=0, sticky=N+S+W+E)
 statusLabel = Label(optionsFrame, text="click new game!")
 statusLabel.grid(row=4, column=0, sticky=N+S+W+E)
 
-for i in range(5):
+loadAIButton = Button(optionsFrame, text="Load AI", command=openJsonFile)
+loadAIButton.grid(row=5, column=0, sticky=N+S+W+E)
+
+saveAIButton = Button(optionsFrame, text="Save AI", command=saveJsonFile)
+saveAIButton.grid(row=6, column=0, sticky=N+S+W+E)
+
+trainAIButton = Button(optionsFrame, text="Train AI", command=partial(doAiTraining, root))
+trainAIButton.grid(row=7, column=0, sticky=N+S+W+E)
+
+for i in range(8):
     Grid.rowconfigure(optionsFrame, i, weight=1)
-Grid.rowconfigure(optionsFrame, 5, weight = 20)
+Grid.rowconfigure(optionsFrame, 8, weight = 20)
 Grid.columnconfigure(optionsFrame, 0, weight=1)
 
 updateButtons(board)
