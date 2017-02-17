@@ -475,7 +475,16 @@ print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTi
 board = makeBoard()
 
 # GUI Code
+currentGameOngoing = False
 weightsMapping = {'b': blackWeights, 'w': whiteWeights}
+
+def newGameClick():
+    startGame(playAsWhich.get() == 0)
+
+def displayMovesClick():
+    global currentGameOngoing
+    if(currentGameOngoing):
+            displayAllPossibleJumpsOrMoves(currentJumps, currentMoves)
 
 def startGame(playerFirst):
     global pieceSelected, currentIndexes, currentJumps, currentMoves
@@ -497,8 +506,9 @@ def startGame(playerFirst):
     updateButtons(board)
     if(computerTurn == 'b'):
         doComputerTurn()
+    statusLabel['text'] = 'Player turn'
 
-def displayAllPossibleJumpsOrMoves(board, jumps, moves):
+def displayAllPossibleJumpsOrMoves(jumps, moves):
     if(jumps != []):
         for(i, moves) in jumps:
             buttons[i]['bg'] = 'green'
@@ -548,21 +558,24 @@ def nextTurn():
     currentBoards = getAllPossibleBoards(board, currentTurn)
     if(isGameOver(currentBoards)):
         winner = 'black' if(currentTurn == 'w') else 'white'
+        statusLabel['text'] = '{0} wins!'.format(winner)
         tkMessageBox.showinfo('Game Over!', 'Game is over: {0} wins!'.format(winner))
         currentGameOngoing = False
 
 def doComputerTurn():
+    statusLabel['text'] = 'computer turn'
     weights = weightsMapping[computerTurn] 
     global board
     board = getBestPossibleBoard(currentBoards, weights)
     nextTurn()
+    statusLabel['text'] = 'player turn'
 
 def buttonClick(zeroIndex):
-    global currentGameOngoing
-    if(not currentGameOngoing):
+    global currentGameOngoing, currentTurn, playerTurn
+    if(not currentGameOngoing or not currentTurn == playerTurn):
         return
     global pieceSelected, currentIndexes, currentJumps, currentMoves
-    global currentTurn, currentBoards
+    global currentBoards
     updateButtons(board)
     if(pieceSelected == True and zeroIndex in currentIndexes):
         pieceSelected = False
@@ -587,11 +600,12 @@ root = Tk()
 
 imagesFolder = 'checker_images'
 separator = '/'
+emptyCheckerImage = PhotoImage(file=imagesFolder + separator + 'emptyChecker.png')
 whiteCheckerImage = PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')
 blackCheckerImage = PhotoImage(file=imagesFolder + separator + 'blackChecker.png')
 whiteCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'whiteCheckerKing.png')
 blackCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'blackCheckerKing.png')
-buttonUpdateImage = {0: '', 1:whiteCheckerImage, 2:whiteCheckerKingImage,
+buttonUpdateImage = {0: emptyCheckerImage, 1:whiteCheckerImage, 2:whiteCheckerKingImage,
         3:blackCheckerImage, 4:blackCheckerKingImage}
 def updateButtons(board):
     for i in range(32):
@@ -600,12 +614,19 @@ def updateButtons(board):
 
 Grid.rowconfigure(root, 0, weight=1)
 Grid.columnconfigure(root, 0, weight=1)
-root.minsize(width=900, height=900)
-root.maxsize(width=900, height=900)
+root.minsize(width=1100, height=900)
+root.maxsize(width=1100, height=900)
 root.wm_title("Checkers!!!")
 
-frame = Frame(root)
-frame.grid(row=0, column=0, sticky=N+S+E+W)
+topLevelFrame = Frame(root)
+topLevelFrame.grid(row=0, column=0, sticky=N+S+E+W)
+
+boardFrame = Frame(topLevelFrame)
+boardFrame.grid(row=0, column=0, sticky=N+S+E+W)
+
+Grid.rowconfigure(topLevelFrame, 0, weight=1)
+Grid.columnconfigure(topLevelFrame, 0, weight=5)
+Grid.columnconfigure(topLevelFrame, 1, weight=1)
 
 buttonFont = tkFont.Font(family='Helvetica', size=24, weight='bold')
 buttons = []
@@ -615,12 +636,11 @@ for r in range(8):
     if(num >= 2):
         num = 0
     for c in range(8):
-        button = Button(frame, text="", command=partial(buttonClick, i)) 
+        button = Button(boardFrame, text="", command=partial(buttonClick, i)) 
         button.grid(row=r, column=c, sticky=N+S+E+W)
         button['font'] = buttonFont
         button['bg'] = 'white'
         button['state'] = 'disabled'
-        button.config(height=100, width=100)
         if(j % 2 == num):
             i += 1
             #button['text'] = str(i) #this displays the index for each board position
@@ -631,10 +651,33 @@ for r in range(8):
         j += 1
 
 for r in range(8):
-    Grid.rowconfigure(frame, r, weight=1)
+    Grid.rowconfigure(boardFrame, r, weight=1)
 for c in range(8):
-    Grid.columnconfigure(frame, c, weight=1)
+    Grid.columnconfigure(boardFrame, c, weight=1)
+
+optionsFrame = Frame(topLevelFrame)
+optionsFrame.grid(row=0, column=1, sticky=N+S+E+W)
+
+newGameButton = Button(optionsFrame, text="New Game?", command=newGameClick)
+newGameButton.grid(row=0, column=0, sticky=N+S+E+W)
+
+playAsWhich = IntVar() 
+radio1 = Radiobutton(optionsFrame, text="Play as black?", variable=playAsWhich, value=0)
+radio1.grid(row=1, column=0, sticky=N+S+E+W)
+radio1.invoke()
+radio2 = Radiobutton(optionsFrame, text="Play as white?", variable=playAsWhich, value=1)
+radio2.grid(row=2, column=0, sticky=N+S+E+W)
+
+displayMovesButton = Button(optionsFrame, text="Display moves", command=displayMovesClick)
+displayMovesButton.grid(row=3, column=0, sticky=N+S+W+E)
+
+statusLabel = Label(optionsFrame, text="click new game!")
+statusLabel.grid(row=4, column=0, sticky=N+S+W+E)
+
+for i in range(5):
+    Grid.rowconfigure(optionsFrame, i, weight=1)
+Grid.rowconfigure(optionsFrame, 5, weight = 20)
+Grid.columnconfigure(optionsFrame, 0, weight=1)
 
 updateButtons(board)
-startGame(False)
 root.mainloop()
