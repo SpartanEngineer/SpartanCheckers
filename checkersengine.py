@@ -703,7 +703,7 @@ def buttonClick(zeroIndex):
         if(len(currentIndexes[zeroIndex]) > 1):
             for (i, j) in currentIndexes[zeroIndex][1]:
                 board[i] = 0
-                if(board[j] == zeroIndex):
+                if(j == zeroIndex):
                     break
         
         nextTurn()
