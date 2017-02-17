@@ -1,4 +1,4 @@
-import re, tkFont, copy, random, time, tkMessageBox, json, os.path
+import re, tkFont, copy, random, time, tkMessageBox, json, os.path, ttk
 from Tkinter import *
 from tkFileDialog import askopenfilename, asksaveasfilename
 from functools import partial
@@ -500,18 +500,44 @@ def startAiTraining(iterationEntry, topLevel):
         cancelAiTraining(topLevel)
 
 def doAiTraining(root):
+    #TODO-finish implementing progress updating
+    #defining our pop up form
     topLevel = Toplevel()
+    topLevel.minsize(width=600, height=200)
+    #topLevel.maxsize(width=1000, height=200)
     topLevel.grab_set()
     topLevel.wm_title("Checkers!!!")
-    label1 = Label(topLevel, text='Number of training iterations:')
-    label1.pack()
+
+    iterationLabel = Label(topLevel, text='# of training iterations:')
+    iterationLabel.grid(row=0, column=0, sticky=N+S+E+W)
     iterationEntry = Entry(topLevel)
-    iterationEntry.pack()
+    iterationEntry.grid(row=0, column=1, sticky=N+S+E+W)
+
+    blackLabel = Label(topLevel, text='BlackAI: -10000/-10000')
+    blackLabel.grid(row=1, column=0, sticky=N+S+E+W)
+    blackBar = ttk.Progressbar(topLevel, orient='horizontal', mode='determinate')
+    blackBar.grid(row=1, column=1, sticky=N+S+E+W)
+
+    whiteLabel = Label(topLevel, text='WhiteAI: -10000/-10000')
+    whiteLabel.grid(row=2, column=0, sticky=N+S+E+W)
+    whiteBar = ttk.Progressbar(topLevel, orient='horizontal', mode='determinate')
+    whiteBar.grid(row=2, column=1, sticky=N+S+E+W)
+
+    estimateLabel = Label(topLevel, text='Est: 0 seconds left')
+    estimateLabel.grid(row=3, column=0, sticky=N+S+E+W)
+    timeLabel = Label(topLevel, text='Time running: 0 seconds')
+    timeLabel.grid(row=3, column=1, sticky=N+S+E+W)
+
     buttonStart = Button(topLevel, text='Start',
             command=partial(startAiTraining, iterationEntry, topLevel))
-    buttonStart.pack()
+    buttonStart.grid(row=4, column=0, sticky=N+S+E+W)
     buttonCancel = Button(topLevel, text='Cancel', command=partial(cancelAiTraining, topLevel))
-    buttonCancel.pack()
+    buttonCancel.grid(row=4, column=1, sticky=N+S+E+W)
+
+    for i in range(5):
+        Grid.rowconfigure(topLevel, i, weight=1)
+    for i in range(2):
+        Grid.columnconfigure(topLevel, i, weight=1)
 
 blackWeights = makeInitialWeights()
 whiteWeights = makeInitialWeights()
