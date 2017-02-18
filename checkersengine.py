@@ -2,6 +2,7 @@ import re, tkFont, copy, random, time, tkMessageBox, json, os.path, ttk
 from Tkinter import *
 from tkFileDialog import askopenfilename, asksaveasfilename
 from functools import partial
+from PIL import Image, ImageTk
 
 #the squares that a checker can move into from each position
 blackMoveMapping = {1:[5, 6],
@@ -764,11 +765,11 @@ root = Tk()
 #weird reason
 imagesFolder = 'checker_images'
 separator = '/'
-emptyCheckerImage = PhotoImage(file=imagesFolder + separator + 'emptyChecker.png')
-whiteCheckerImage = PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')
-blackCheckerImage = PhotoImage(file=imagesFolder + separator + 'blackChecker.png')
-whiteCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'whiteCheckerKing.png')
-blackCheckerKingImage = PhotoImage(file=imagesFolder + separator + 'blackCheckerKing.png')
+emptyCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'emptyChecker.png') 
+whiteCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')
+blackCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'blackChecker.png')
+whiteCheckerKingImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteCheckerKing.png')
+blackCheckerKingImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'blackCheckerKing.png')
 buttonUpdateImage = {0: emptyCheckerImage, 1:whiteCheckerImage, 2:whiteCheckerKingImage,
         3:blackCheckerImage, 4:blackCheckerKingImage}
 
