@@ -775,8 +775,6 @@ buttonUpdateImage = {0: emptyCheckerImage, 1:whiteCheckerImage, 2:whiteCheckerKi
 
 Grid.rowconfigure(root, 0, weight=1)
 Grid.columnconfigure(root, 0, weight=1)
-root.minsize(width=1100, height=900)
-root.maxsize(width=1100, height=900)
 root.wm_title("Checkers!!!")
 
 topLevelFrame = Frame(root)
