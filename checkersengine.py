@@ -254,10 +254,12 @@ def updateWeights(trainingData, weights, didWin):
     n = len(trainingData)
     estimates = [evaluateBoard(x, weights) for x in trainingData]
     values = [0 for x in range(n)]
-    if(didWin == True):
+    if(didWin == 0):
         values[len(values)-1] = 100
-    else:
+    elif(didWin == 1):
         values[len(values)-1] = -100
+    else:
+        values[len(values)-1] = 0
 
     for i in range(n-1):
         values[i] = estimates[i+1]
@@ -399,6 +401,23 @@ def getRandomBoard(boards):
     randomNum = random.randint(0, len(boards)-1)
     return boards[randomNum]
 
+def getNPieces(board, color):
+    if(color == 'w'):
+        return board.count(1) + board.count(2)
+    else:
+        return board.count(3) + board.count(4)
+
+def piecesChanged(board, nWhitePieces, nBlackPieces):
+    nWhitePieces2 = getNPieces(board, 'w')
+    nBlackPieces2 = getNPieces(board, 'b')
+
+    if(nWhitePieces != nWhitePieces2 or nBlackPieces != nBlackPieces2):
+        nWhitePieces = nWhitePieces2
+        nBlackPieces = nBlackPieces2
+        return True 
+    else:
+        return False 
+
 def updateAiProgress(whichAi, topLevel, progressVars, timeLabels, i, iterations,
         iterationsDoubled, startTime):
     if(whichAi != None and topLevel != None and progressVars != None and timeLabels != None):
@@ -424,6 +443,8 @@ def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
 
     startTime = time.time()
 
+    movesToDraw = 50
+
     blackWeights = makeInitialWeights()
     whiteWeights = makeInitialWeights()
 
@@ -440,7 +461,10 @@ def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
         board = makeBoard()
         boards = getAllPossibleBoards(board, turn)
         trainingData = []
-        while(not isGameOver(boards)):
+        nWhitePieces = 12
+        nBlackPieces = 12
+        turnsSinceCaptured = 0
+        while(not isGameOver(boards) and turnsSinceCaptured < movesToDraw):
             if(turn == 'b'):
                 bestBoard = getBestPossibleBoard(boards, blackWeights)
                 board = bestBoard
@@ -451,9 +475,16 @@ def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
                 board = randomBoard
                 turn = 'b'
 
+            if(piecesChanged(board, nWhitePieces, nBlackPieces) == False):
+                turnsSinceCaptured = 0
+            else:
+                turnsSinceCaptured += 1
+
             boards = getAllPossibleBoards(board, turn)
 
-        didWin = (turn == 'w')
+        didWin = 0 if(turn == 'b') else 1
+        if(turnsSinceCaptured >= movesToDraw):
+            didWin = 2
         updateWeights(trainingData, blackWeights, didWin)
 
 
@@ -466,7 +497,10 @@ def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
         board = makeBoard()
         boards = getAllPossibleBoards(board, turn)
         trainingData = []
-        while(not isGameOver(boards)):
+        nWhitePieces = 12
+        nBlackPieces = 12
+        turnsSinceCaptured = 0
+        while(not isGameOver(boards) and turnsSinceCaptured < movesToDraw):
             if(turn == 'b'):
                 randomBoard = getRandomBoard(boards)
                 board = randomBoard
@@ -477,9 +511,16 @@ def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
                 trainingData.append(board) 
                 turn = 'b'
 
+            if(piecesChanged(board, nWhitePieces, nBlackPieces) == False):
+                turnsSinceCaptured = 0
+            else:
+                turnsSinceCaptured += 1
+
             boards = getAllPossibleBoards(board, turn)
 
-        didWin = (turn == 'b')
+        didWin = 0 if(turn == 'w') else 1
+        if(turnsSinceCaptured >= movesToDraw):
+            didWin = 2
         updateWeights(trainingData, whiteWeights, didWin)
 
         updateAiProgress('w', topLevel, progressVars, timeLabels, i, iterations,
