@@ -2,7 +2,7 @@ import re, tkFont, copy, random, time, tkMessageBox, json, os.path, ttk
 from Tkinter import *
 from tkFileDialog import askopenfilename, asksaveasfilename
 from functools import partial
-from PIL import Image, ImageTk
+from PIL import ImageTk
 
 #the squares that a checker can move into from each position
 blackMoveMapping = {1:[5, 6],
@@ -231,19 +231,42 @@ def makeInitialWeights():
     for i in range(4):
         a = [initialWeight for j in range(32)]
         weights.append(a)
+    weights.append([initialWeight for j in range(6)])
     return weights
+
+def hasPieces(board, turn):
+    return 1 if(getNPieces(board, turn) > 0) else 0
+
+def hasMoves(board, turn):
+    return 1 if(len(getAllPossibleBoards(board, turn)) > 0) else 0
+
+def piecesCanJump(board, turn):
+    moves = getAllPossibleJumps(board, turn)
+    result = 0
+    for m in moves:
+        result = max(result, len(m[1]))
+    return result
 
 def getFeatures(board):
     features = []
     for i in range(1, 5):
         a = [1 if(x == i) else 0 for x in board]
         features.append(a)
+
+    b = [hasPieces(board, 'w'),
+            hasPieces(board, 'b'),
+            hasMoves(board, 'w'),
+            hasMoves(board, 'b'),
+            piecesCanJump(board, 'w'),
+            piecesCanJump(board, 'b')]
+
+    features.append(b)
     return features
 
 def evaluateFeatures(features, weights):
     value = 0
-    for i in range(4):
-        for j in range(32):
+    for i in range(len(weights)):
+        for j in range(len(weights[i])):
             value += (weights[i][j] * features[i][j])
 
     return value
@@ -844,7 +867,7 @@ trainAIButton.grid(row=7, column=0, sticky=N+S+W+E)
 
 for i in range(8):
     Grid.rowconfigure(optionsFrame, i, weight=1)
-Grid.rowconfigure(optionsFrame, 8, weight = 20)
+Grid.rowconfigure(optionsFrame, 8, weight=20)
 Grid.columnconfigure(optionsFrame, 0, weight=1)
 
 updateButtons(board)
