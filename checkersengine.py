@@ -91,7 +91,7 @@ def evaluateBoardRecursive(board, side, turn, blackWeights, whiteWeights, depth=
         else:
             return winValue 
 
-    newDepth = depth-1 if(side == turn) else depth
+    newDepth = (depth-1) if(side == turn) else depth
     if(turn == 'b'):
         a = getBestPossibleBoard(boards, blackWeights)
         return evaluateBoardRecursive(a, side, 'w', blackWeights,
@@ -140,7 +140,7 @@ def getBestPossibleBoard(boards, weights):
 
 def getBestPossibleBoardRecursive(boards, side, turn, blackWeights, whiteWeights, depth=3):
     #TODO- finish implementing this
-    values = [evaluateBoardRecursive(b, turn, turn, blackWeights,
+    values = [evaluateBoardRecursive(b, side, turn, blackWeights,
         whiteWeights, depth) for b in boards]
 
     maxValue = values[0]
@@ -590,7 +590,7 @@ def doComputerTurn():
     global board
     #board = getBestPossibleBoard(currentBoards, weights)
     board = getBestPossibleBoardRecursive(currentBoards, computerTurn,
-            playerTurn, blackWeights, whiteWeights, 8)
+            playerTurn, blackWeights, whiteWeights, 3)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
