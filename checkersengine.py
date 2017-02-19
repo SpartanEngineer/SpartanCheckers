@@ -4,7 +4,7 @@ from tkFileDialog import askopenfilename, asksaveasfilename
 from functools import partial
 from PIL import ImageTk
 
-import checkersMoveMappings
+from checkersMoveMappings import *
 
 weightsFileName = 'weights.json'
 learnConstant = 0.1 #learning constant
@@ -76,15 +76,30 @@ def evaluateFeatures(features, weights):
 def evaluateBoard(board, weights):
     return evaluateFeatures(getFeatures(board), weights)
 
-def evaluateBoardRecursive(board, startTurn, turn, blackWeights, whiteWeights, depth=3):
+def evaluateBoardRecursive(board, side, turn, blackWeights, whiteWeights, depth=3):
     #TODO- finish implementing this
     if(depth <= 0):
         if(turn == 'b'):
             return evaluateBoard(board, blackWeights)
         else:
             return evaluateBoard(board, whiteWeights)
+    
+    boards = getAllPossibleBoards(board, turn)
+    if(isGameOver(boards)):
+        if(turn == side):
+            return lossValue 
+        else:
+            return winValue 
 
-    return 0
+    newDepth = depth-1 if(side == turn) else depth
+    if(turn == 'b'):
+        a = getBestPossibleBoard(boards, blackWeights)
+        return evaluateBoardRecursive(a, side, 'w', blackWeights,
+                whiteWeights, newDepth) 
+    else:
+        a = getBestPossibleBoard(boards, whiteWeights)
+        return evaluateBoardRecursive(a, side, 'b', blackWeights,
+                whiteWeights, newDepth) 
 
 def updateWeights(trainingData, weights, didWin):
     n = len(trainingData)
@@ -114,6 +129,20 @@ def updateWeights(trainingData, weights, didWin):
 
 def getBestPossibleBoard(boards, weights):
     values = [evaluateBoard(b, weights) for b in boards]
+    maxValue = values[0]
+    maxBoard = boards[0]
+    for i in range(1, len(boards)):
+        if(values[i] > maxValue):
+            maxValue = values[i]
+            maxBoard = boards[i]
+
+    return maxBoard
+
+def getBestPossibleBoardRecursive(boards, side, turn, blackWeights, whiteWeights, depth=3):
+    #TODO- finish implementing this
+    values = [evaluateBoardRecursive(b, turn, turn, blackWeights,
+        whiteWeights, depth) for b in boards]
+
     maxValue = values[0]
     maxBoard = boards[0]
     for i in range(1, len(boards)):
@@ -559,7 +588,9 @@ def doComputerTurn():
     statusLabel['text'] = 'computer turn'
     weights = weightsMapping[computerTurn] 
     global board
-    board = getBestPossibleBoard(currentBoards, weights)
+    #board = getBestPossibleBoard(currentBoards, weights)
+    board = getBestPossibleBoardRecursive(currentBoards, computerTurn,
+            playerTurn, blackWeights, whiteWeights, 8)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
