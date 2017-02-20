@@ -3,6 +3,9 @@ from Tkinter import *
 from tkFileDialog import askopenfilename, asksaveasfilename
 from functools import partial
 from PIL import ImageTk
+import multiprocessing
+from multiprocessing import Process
+from Queue import Empty, Queue
 
 from checkersMoveMappings import *
 
@@ -285,6 +288,8 @@ def piecesChanged(board, nWhitePieces, nBlackPieces):
 
 def updateAiProgress(whichAi, topLevel, progressVars, timeLabels, i, iterations,
         iterationsDoubled, startTime):
+    #TODO- finish this
+    pass
     if(whichAi != None and topLevel != None and progressVars != None and timeLabels != None):
         x = i+1.0
         amt = int((x / iterations) * 100)
@@ -298,27 +303,15 @@ def updateAiProgress(whichAi, topLevel, progressVars, timeLabels, i, iterations,
             timeLeft = timePer * (iterationsDoubled - y)
         whichPVar = 0 if(whichAi == 'b') else 1
         progressVars[whichPVar].set(amt)
-        timeLabels[0]['text'] = 'Est: {0} seconds left'.format(int(timeLeft)) 
-        timeLabels[1]['text'] = 'Time running: {0} seconds'.format(int(timeRunning))
         topLevel.update()
+        #timeLabels[0]['text'] = 'Est: {0} seconds left'.format(int(timeLeft)) 
+        #timeLabels[1]['text'] = 'Time running: {0} seconds'.format(int(timeRunning))
+        #topLevel.update()
 
-def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
-    #training our AI
-    print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
-
-    startTime = time.time()
-
-    movesToDraw = 50
-
+def trainBlackAi(queue, iterations, movesToDraw, threadSafeGui, topLevel, progressVars, timeLabels):
     blackWeights = makeInitialWeights()
-    whiteWeights = makeInitialWeights()
-
     iterationsDoubled = iterations*2
-
-    if(progressVars != None and topLevel != None):
-        progressVars[0].set(0)
-        progressVars[1].set(0)
-        topLevel.update()
+    startTime = time.time()
 
     #train the black AI against a random AI
     for i in range(iterations):
@@ -352,9 +345,15 @@ def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
             didWin = 2
         updateWeights(trainingData, blackWeights, didWin)
 
+        #updateAiProgress('b', topLevel, progressVars, timeLabels, i, iterations,
+        #        iterationsDoubled, startTime)
 
-        updateAiProgress('b', topLevel, progressVars, timeLabels, i, iterations,
-                iterationsDoubled, startTime)
+    queue.put(blackWeights)
+
+def trainWhiteAi(queue, iterations, movesToDraw, threadSafeGui, topLevel, progressVars, timeLabels):
+    whiteWeights = makeInitialWeights()
+    iterationsDoubled = iterations*2
+    startTime = time.time()
 
     #train the white AI against a random AI
     for i in range(iterations):
@@ -388,11 +387,162 @@ def trainAi(iterations, topLevel=None, progressVars=None, timeLabels=None):
             didWin = 2
         updateWeights(trainingData, whiteWeights, didWin)
 
-        updateAiProgress('w', topLevel, progressVars, timeLabels, i, iterations,
-                iterationsDoubled, startTime)
+        #updateAiProgress('w', topLevel, progressVars, timeLabels, i, iterations,
+        #        iterationsDoubled, startTime)
 
+    queue.put(whiteWeights)
+
+def timeRunningUpdater(q, threadSafeGui, startTime, timeRunningLabel):
+    while(q.empty() == True):
+        timeRunning = time.time() - startTime 
+        s = 'Time running: {0} seconds'.format(int(timeRunning))
+        threadSafeGui.put(['running', s])
+        print(s)
+        #timeRunningLabel['text'] = 'Time running: {0} seconds'.format(int(timeRunning))
+        #timeRunningLabel.update()
+        if(timeRunning >= 10):
+            break
+        time.sleep(1)
+
+class ThreadSafeGui(Text):
+    def __init__(self, master, q, labels, **options):
+        Text.__init__(self, master, **options)
+        self.labels = labels
+        self.q = q 
+        self.updateGui()
+
+    def put(self, data):
+        self.q.put(data)
+
+    def updateGui(self):
+        try:
+            while self.q.qsize() > 0:
+                data = self.q.get(block=False)
+                label = self.labels[data[0]]
+                label['text'] = data[1]
+                print(data)
+                self.update_idletasks() 
+        except Empty:
+            pass
+        self.master.after(100, self.updateGui)
+
+def trainAi(iterations, threadSafeGui=None, threadSafeQueue=None, topLevel=None, progressVars=None, timeLabels=None):
+    #training our AI
+    print("We will now train our AI using {0} iterations... this may take a while".format(iterations))
+
+    startTime = time.time()
+    timeRunningQueue = multiprocessing.Queue()
+    timeRunningProcess = Process(target=timeRunningUpdater,
+            args=(timeRunningQueue, threadSafeGui, startTime, timeLabels[1]))
+    timeRunningProcess.start()
+
+    movesToDraw = 50
+
+    blackWeights = makeInitialWeights()
+    whiteWeights = makeInitialWeights()
+
+    iterationsDoubled = iterations*2
+
+    if(progressVars != None and topLevel != None):
+        progressVars[0].set(0)
+        progressVars[1].set(0)
+        topLevel.update()
+
+    ##train the black AI against a random AI
+    #for i in range(iterations):
+    #    turn = 'b'
+    #    board = makeBoard()
+    #    boards = getAllPossibleBoards(board, turn)
+    #    trainingData = []
+    #    nWhitePieces = 12
+    #    nBlackPieces = 12
+    #    turnsSinceCaptured = 0
+    #    while(not isGameOver(boards) and turnsSinceCaptured < movesToDraw):
+    #        if(turn == 'b'):
+    #            bestBoard = getBestPossibleBoard(boards, blackWeights)
+    #            board = bestBoard
+    #            trainingData.append(board) 
+    #            turn = 'w'
+    #        else:
+    #            randomBoard = getRandomBoard(boards)
+    #            board = randomBoard
+    #            turn = 'b'
+
+    #        if(piecesChanged(board, nWhitePieces, nBlackPieces) == False):
+    #            turnsSinceCaptured = 0
+    #        else:
+    #            turnsSinceCaptured += 1
+
+    #        boards = getAllPossibleBoards(board, turn)
+
+    #    didWin = 0 if(turn == 'b') else 1
+    #    if(turnsSinceCaptured >= movesToDraw):
+    #        didWin = 2
+    #    updateWeights(trainingData, blackWeights, didWin)
+
+
+    #    updateAiProgress('b', topLevel, progressVars, timeLabels, i, iterations,
+    #            iterationsDoubled, startTime)
+
+    ##train the white AI against a random AI
+    #for i in range(iterations):
+    #    turn = 'b'
+    #    board = makeBoard()
+    #    boards = getAllPossibleBoards(board, turn)
+    #    trainingData = []
+    #    nWhitePieces = 12
+    #    nBlackPieces = 12
+    #    turnsSinceCaptured = 0
+    #    while(not isGameOver(boards) and turnsSinceCaptured < movesToDraw):
+    #        if(turn == 'b'):
+    #            randomBoard = getRandomBoard(boards)
+    #            board = randomBoard
+    #            turn = 'w'
+    #        else:
+    #            bestBoard = getBestPossibleBoard(boards, whiteWeights)
+    #            board = bestBoard
+    #            trainingData.append(board) 
+    #            turn = 'b'
+
+    #        if(piecesChanged(board, nWhitePieces, nBlackPieces) == False):
+    #            turnsSinceCaptured = 0
+    #        else:
+    #            turnsSinceCaptured += 1
+
+    #        boards = getAllPossibleBoards(board, turn)
+
+    #    didWin = 0 if(turn == 'w') else 1
+    #    if(turnsSinceCaptured >= movesToDraw):
+    #        didWin = 2
+    #    updateWeights(trainingData, whiteWeights, didWin)
+
+    #    updateAiProgress('w', topLevel, progressVars, timeLabels, i, iterations,
+    #            iterationsDoubled, startTime)
+
+    #endTime = time.time()
+    #print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTime)))
+
+    blackQueue = multiprocessing.Queue()
+    whiteQueue = multiprocessing.Queue()
+    process1 = Process(target=trainBlackAi, args=(blackQueue, iterations,
+        movesToDraw, threadSafeGui, topLevel, progressVars, timeLabels))
+    process2 = Process(target=trainWhiteAi, args=(whiteQueue, iterations,
+        movesToDraw, threadSafeGui, topLevel, progressVars, timeLabels))
+
+    process1.start()
+    process2.start()
+    #process1.join()
+    #process2.join()
+
+    while(time.time() - startTime >= 10):
+        time.sleep(100)
+
+    blackWeights = blackQueue.get()
+    whiteWeights = whiteQueue.get()
+    #timeRunningQueue.put(0)
+    #timeRunningProcess.join()
     endTime = time.time()
-    print("Training {0} iterations took: {1}".format(iterations, str(endTime-startTime)))
+    print("Training threaded {0} iterations took: {1}".format(iterations, str(endTime-startTime)))
 
     return [blackWeights, whiteWeights]
 
@@ -425,20 +575,19 @@ def cancelAiTraining(topLevel):
     topLevel.grab_release()
     topLevel.destroy()
 
-def startAiTraining(iterationEntry, topLevel, progressVars, timeLabels):
+def startAiTraining(iterationEntry, threadSafeGui, threadSafeQueue, topLevel, progressVars, timeLabels):
     try:
         iterations = int(iterationEntry.get())
     except ValueError:
         print('iterations must be a valid integer value')
     else:
-        theWeights = trainAi(iterations, topLevel, progressVars, timeLabels)
+        theWeights = trainAi(iterations, threadSafeGui, threadSafeQueue, topLevel, progressVars, timeLabels)
         global blackWeights, whiteWeights
         blackWeights = theWeights[0]
         whiteWeights = theWeights[1]
         print(theWeights)
 
 def doAiTraining(root):
-    #TODO-finish implementing progress updating
     #defining our pop up form
     topLevel = Toplevel()
     topLevel.minsize(width=600, height=200)
@@ -448,6 +597,7 @@ def doAiTraining(root):
     iterationLabel = Label(topLevel, text='# of training iterations:')
     iterationLabel.grid(row=0, column=0, sticky=N+S+E+W)
     iterationEntry = Entry(topLevel)
+    iterationEntry.insert(0, '10')
     iterationEntry.grid(row=0, column=1, sticky=N+S+E+W)
 
     blackLabel = Label(topLevel, text='BlackAI:')
@@ -467,9 +617,12 @@ def doAiTraining(root):
     timeLabel = Label(topLevel, text='Time running: 0 seconds')
     timeLabel.grid(row=3, column=1, sticky=N+S+E+W)
 
+    threadSafeQueue = multiprocessing.Queue()
+    threadSafeGui = ThreadSafeGui(topLevel, threadSafeQueue, {'running':timeLabel})
+
     buttonStart = Button(topLevel, text='Start',
-            command=partial(startAiTraining, iterationEntry, topLevel,
-                [blackAIProgress, whiteAIProgress] , [estimateLabel, timeLabel]))
+            command=partial(startAiTraining, iterationEntry, threadSafeGui,
+                threadSafeQueue, topLevel, [blackAIProgress, whiteAIProgress] , [estimateLabel, timeLabel]))
     buttonStart.grid(row=4, column=0, sticky=N+S+E+W)
     buttonCancel = Button(topLevel, text='Done', command=partial(cancelAiTraining, topLevel))
     buttonCancel.grid(row=4, column=1, sticky=N+S+E+W)
