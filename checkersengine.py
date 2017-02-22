@@ -68,6 +68,31 @@ def getFeatures(board):
     features.append(b)
     return features
 
+def getNTrapped(board, x):
+    #TODO- implement this
+    return 0
+
+def getNRunawayCheckers(board, x):
+    #TODO- implement this
+    return 0
+
+def getChinookFeatures(board):
+    #TODO- implement this
+
+    #features:
+    #piece count, kings count, trapped kings, turn, runaway checkers(free path
+    #to king)
+    features = [board.count(1),
+                board.count(3),
+                board.count(2),
+                board.count(4),
+                getNTrapped(board, 2),
+                getNTrapped(board, 4),
+                getNRunawayCheckers(board, 1),
+                getNRunawayCheckers(board, 3)]
+
+    return features
+
 def evaluateFeatures(features, weights):
     value = 0
     for i in range(len(weights)):
@@ -723,7 +748,7 @@ def doComputerTurn():
     #board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
     #        blackWeights, whiteWeights, 4)
     board = getBestPossibleBoardAlphaBeta(currentBoards, computerTurn,
-            blackWeights, whiteWeights, 6)
+            blackWeights, whiteWeights, 8)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
