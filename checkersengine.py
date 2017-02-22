@@ -127,9 +127,37 @@ def evaluateBoardMinimax(board, depth, maximizingPlayer, turn, weights):
             value = min(value, v)
         return value
 
-def evaluateBoardAlphaBeta(board, side, turn, blackWeights, whiteWeights, depth=3):
-    #TODO- implement the alpha-beta pruning algorithm here
-    pass
+def evaluateBoardAlphaBeta(board, depth, maximizingPlayer, alpha, beta, turn, weights):
+    if(depth == 0):
+        return evaluateBoard(board, weights)
+
+    boards = getAllPossibleBoards(board, turn)
+
+    if(isGameOver(boards)):
+        return winValue if(maximizingPlayer) else lossValue
+
+    nextTurn = 'w' if(turn == 'b') else 'b'
+
+    if(maximizingPlayer):
+        value = -float("inf")
+        for b in boards:
+            value = max(value, evaluateBoardAlphaBeta(board, depth-1, False,
+                alpha, beta, nextTurn, weights))
+            alpha = max(alpha, value)
+            if(beta <= alpha):
+                break
+
+        return value
+    else:
+        value = float("inf")
+        for b in boards:
+            value = min(value, evaluateBoardAlphaBeta(board, depth-1, True, alpha,
+                beta, nextTurn, weights))
+            beta = min(beta, value)
+            if(beta <= alpha):
+                break
+
+        return value
 
 def updateWeights(trainingData, weights, didWin):
     n = len(trainingData)
@@ -169,7 +197,6 @@ def getBestPossibleBoard(boards, weights):
     return maxBoard
 
 def getBestPossibleBoardRecursive(boards, side, turn, blackWeights, whiteWeights, depth=3):
-    #TODO- finish implementing this
     values = [evaluateBoardRecursive(b, side, turn, blackWeights,
         whiteWeights, depth) for b in boards]
 
@@ -189,6 +216,24 @@ def getBestPossibleBoardMinimax(boards, side, blackWeights, whiteWeights, depth=
     turn = 'w' if(side == 'b') else 'b'
     weights = blackWeights if(side == 'b') else whiteWeights
     values = [evaluateBoardMinimax(b, depth, True, turn, weights) for b in boards]
+
+    maxValue = values[0]
+    maxBoard = boards[0]
+    for i in range(1, len(boards)):
+        if(values[i] > maxValue):
+            maxValue = values[i]
+            maxBoard = boards[i]
+
+    return maxBoard
+
+def getBestPossibleBoardAlphaBeta(boards, side, blackWeights, whiteWeights, depth=3):
+    if(len(boards) == 1):
+        return boards[0]
+
+    turn = 'w' if(side == 'b') else 'b'
+    weights = blackWeights if(side == 'b') else whiteWeights
+    values = [evaluateBoardAlphaBeta(b, depth, True, -float("inf"),
+        float("inf"), turn, weights) for b in boards]
 
     maxValue = values[0]
     maxBoard = boards[0]
@@ -723,7 +768,9 @@ def doComputerTurn():
     #board = getBestPossibleBoard(currentBoards, weights)
     #board = getBestPossibleBoardRecursive(currentBoards, computerTurn,
     #        playerTurn, blackWeights, whiteWeights, 3)
-    board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
+    #board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
+    #        blackWeights, whiteWeights, 4)
+    board = getBestPossibleBoardAlphaBeta(currentBoards, computerTurn,
             blackWeights, whiteWeights, 4)
     nextTurn()
     statusLabel['text'] = 'player turn'
