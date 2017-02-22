@@ -103,55 +103,32 @@ def evaluateBoardRecursive(board, side, turn, blackWeights, whiteWeights, depth=
         return evaluateBoardRecursive(a, side, 'b', blackWeights,
                 whiteWeights, newDepth) 
 
-def evaluateBoardMinimax(board, side, turn, blackWeights, whiteWeights, depth=3):
-    #TODO- implement the minimax algorithm here
+def evaluateBoardMinimax(board, depth, maximizingPlayer, turn, weights):
+    if(depth == 0):
+        return evaluateBoard(board, weights)
 
-    #pseudocode:
-    #
-    #function minimax(node, depth, maximizingPlayer)
-    #    if depth = 0 or node is a terminal node
-    #        return the heuristic value of node
+    boards = getAllPossibleBoards(board, turn)
 
-    #    if maximizingPlayer
-    #        bestValue := −∞
-    #        for each child of node
-    #            v := minimax(child, depth − 1, FALSE)
-    #            bestValue := max(bestValue, v)
-    #        return bestValue
+    if(isGameOver(boards)):
+        return winValue if(maximizingPlayer) else lossValue
 
-    #    else    (* minimizing player *)
-    #        bestValue := +∞
-    #        for each child of node
-    #            v := minimax(child, depth − 1, TRUE)
-    #            bestValue := min(bestValue, v)
-    #        return bestValue
+    nextTurn = 'w' if(turn == 'b') else 'b'
 
-    pass
+    if maximizingPlayer == True:
+        value = -float("inf")
+        for b in boards:
+            v = evaluateBoardMinimax(b, depth-1, False, nextTurn, weights) 
+            value = max(value, v)
+        return value
+    else:
+        value = float("inf")
+        for b in boards:
+            v = evaluateBoardMinimax(b, depth-1, True, nextTurn, weights)
+            value = min(value, v)
+        return value
 
 def evaluateBoardAlphaBeta(board, side, turn, blackWeights, whiteWeights, depth=3):
     #TODO- implement the alpha-beta pruning algorithm here
-    #fail-soft variation
-
-    #function alphabeta(node, depth, α, β, maximizingPlayer)
-    #     if depth = 0 or node is a terminal node
-    #         return the heuristic value of node
-    #     if maximizingPlayer
-    #         v := -∞
-    #         for each child of node
-    #             v := max(v, alphabeta(child, depth – 1, α, β, FALSE))
-    #             α := max(α, v)
-    #             if β ≤ α
-    #                 break (* β cut-off *)
-    #         return v
-    #     else
-    #         v := ∞
-    #         for each child of node
-    #             v := min(v, alphabeta(child, depth – 1, α, β, TRUE))
-    #             β := min(β, v)
-    #             if β ≤ α
-    #                 break (* α cut-off *)
-    #         return v
-
     pass
 
 def updateWeights(trainingData, weights, didWin):
@@ -195,6 +172,23 @@ def getBestPossibleBoardRecursive(boards, side, turn, blackWeights, whiteWeights
     #TODO- finish implementing this
     values = [evaluateBoardRecursive(b, side, turn, blackWeights,
         whiteWeights, depth) for b in boards]
+
+    maxValue = values[0]
+    maxBoard = boards[0]
+    for i in range(1, len(boards)):
+        if(values[i] > maxValue):
+            maxValue = values[i]
+            maxBoard = boards[i]
+
+    return maxBoard
+
+def getBestPossibleBoardMinimax(boards, side, blackWeights, whiteWeights, depth=3):
+    if(len(boards) == 1):
+        return boards[0]
+
+    turn = 'w' if(side == 'b') else 'b'
+    weights = blackWeights if(side == 'b') else whiteWeights
+    values = [evaluateBoardMinimax(b, depth, True, turn, weights) for b in boards]
 
     maxValue = values[0]
     maxBoard = boards[0]
@@ -727,8 +721,10 @@ def doComputerTurn():
     weights = weightsMapping[computerTurn] 
     global board
     #board = getBestPossibleBoard(currentBoards, weights)
-    board = getBestPossibleBoardRecursive(currentBoards, computerTurn,
-            playerTurn, blackWeights, whiteWeights, 3)
+    #board = getBestPossibleBoardRecursive(currentBoards, computerTurn,
+    #        playerTurn, blackWeights, whiteWeights, 3)
+    board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
+            blackWeights, whiteWeights, 4)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
