@@ -79,32 +79,10 @@ def evaluateFeatures(features, weights):
 def evaluateBoard(board, weights):
     return evaluateFeatures(getFeatures(board), weights)
 
-def evaluateBoardRecursive(board, side, turn, blackWeights, whiteWeights, depth=3):
-    if(depth <= 0):
-        if(turn == 'b'):
-            return evaluateBoard(board, blackWeights)
-        else:
-            return evaluateBoard(board, whiteWeights)
-    
-    boards = getAllPossibleBoards(board, turn)
-    if(isGameOver(boards)):
-        if(turn == side):
-            return lossValue 
-        else:
-            return winValue 
-
-    newDepth = (depth-1) if(side == turn) else depth
-    if(turn == 'b'):
-        a = getBestPossibleBoard(boards, blackWeights)
-        return evaluateBoardRecursive(a, side, 'w', blackWeights,
-                whiteWeights, newDepth) 
-    else:
-        a = getBestPossibleBoard(boards, whiteWeights)
-        return evaluateBoardRecursive(a, side, 'b', blackWeights,
-                whiteWeights, newDepth) 
-
-def evaluateBoardMinimax(board, depth, maximizingPlayer, turn, weights):
+def evaluateBoardMinimax(board, depth, maximizingPlayer, turn, blackWeights,
+        whiteWeights):
     if(depth == 0):
+        weights = blackWeights if(turn == 'b') else whiteWeights
         return evaluateBoard(board, weights)
 
     boards = getAllPossibleBoards(board, turn)
@@ -127,8 +105,10 @@ def evaluateBoardMinimax(board, depth, maximizingPlayer, turn, weights):
             value = min(value, v)
         return value
 
-def evaluateBoardAlphaBeta(board, depth, maximizingPlayer, alpha, beta, turn, weights):
+def evaluateBoardAlphaBeta(board, depth, maximizingPlayer, alpha, beta, turn,
+        blackWeights, whiteWeights):
     if(depth == 0):
+        weights = blackWeights if(turn == 'b') else whiteWeights
         return evaluateBoard(board, weights)
 
     boards = getAllPossibleBoards(board, turn)
@@ -142,7 +122,7 @@ def evaluateBoardAlphaBeta(board, depth, maximizingPlayer, alpha, beta, turn, we
         value = -float("inf")
         for b in boards:
             value = max(value, evaluateBoardAlphaBeta(board, depth-1, False,
-                alpha, beta, nextTurn, weights))
+                alpha, beta, nextTurn, blackWeights, whiteWeights))
             alpha = max(alpha, value)
             if(beta <= alpha):
                 break
@@ -152,7 +132,7 @@ def evaluateBoardAlphaBeta(board, depth, maximizingPlayer, alpha, beta, turn, we
         value = float("inf")
         for b in boards:
             value = min(value, evaluateBoardAlphaBeta(board, depth-1, True, alpha,
-                beta, nextTurn, weights))
+                beta, nextTurn, blackWeights, whiteWeights))
             beta = min(beta, value)
             if(beta <= alpha):
                 break
@@ -184,65 +164,40 @@ def updateWeights(trainingData, weights, didWin):
             for k in range(len(weights[j])):
                 weights[j][k] = weights[j][k] + (learnConstant*(value-estimate)*features[j][k])
 
+def chooseMaximumBoard(values, boards):
+    maxValue = values[0]
+    maxBoard = boards[0]
+
+    for i in range(1, len(boards)):
+        if(values[i] > maxValue):
+            maxValue = values[i]
+            maxBoard = boards[i]
+
+    return maxBoard
 
 def getBestPossibleBoard(boards, weights):
     values = [evaluateBoard(b, weights) for b in boards]
-    maxValue = values[0]
-    maxBoard = boards[0]
-    for i in range(1, len(boards)):
-        if(values[i] > maxValue):
-            maxValue = values[i]
-            maxBoard = boards[i]
-
-    return maxBoard
-
-def getBestPossibleBoardRecursive(boards, side, turn, blackWeights, whiteWeights, depth=3):
-    values = [evaluateBoardRecursive(b, side, turn, blackWeights,
-        whiteWeights, depth) for b in boards]
-
-    maxValue = values[0]
-    maxBoard = boards[0]
-    for i in range(1, len(boards)):
-        if(values[i] > maxValue):
-            maxValue = values[i]
-            maxBoard = boards[i]
-
-    return maxBoard
+    return chooseMaximumBoard(values, boards)
 
 def getBestPossibleBoardMinimax(boards, side, blackWeights, whiteWeights, depth=3):
     if(len(boards) == 1):
         return boards[0]
 
-    turn = 'w' if(side == 'b') else 'b'
-    weights = blackWeights if(side == 'b') else whiteWeights
-    values = [evaluateBoardMinimax(b, depth, True, turn, weights) for b in boards]
+    turn = side
+    values = [evaluateBoardMinimax(b, depth, True, turn, blackWeights,
+        whiteWeights) for b in boards]
 
-    maxValue = values[0]
-    maxBoard = boards[0]
-    for i in range(1, len(boards)):
-        if(values[i] > maxValue):
-            maxValue = values[i]
-            maxBoard = boards[i]
-
-    return maxBoard
+    return chooseMaximumBoard(values, boards)
 
 def getBestPossibleBoardAlphaBeta(boards, side, blackWeights, whiteWeights, depth=3):
     if(len(boards) == 1):
         return boards[0]
 
-    turn = 'w' if(side == 'b') else 'b'
-    weights = blackWeights if(side == 'b') else whiteWeights
+    turn = side
     values = [evaluateBoardAlphaBeta(b, depth, True, -float("inf"),
-        float("inf"), turn, weights) for b in boards]
+        float("inf"), turn, blackWeights, whiteWeights) for b in boards]
 
-    maxValue = values[0]
-    maxBoard = boards[0]
-    for i in range(1, len(boards)):
-        if(values[i] > maxValue):
-            maxValue = values[i]
-            maxBoard = boards[i]
-
-    return maxBoard
+    return chooseMaximumBoard(values, boards)
 
 def getJumps(board, index, jumpMapping, enemyCheckers, prev, result):
     #i == the jumped over spot, j == the landing spot
@@ -376,7 +331,6 @@ def piecesChanged(board, nWhitePieces, nBlackPieces):
         return False 
 
 def updateAiProgress(whichAi, threadSafeQueue, i, iterations, startTime):
-    #TODO- finish this
     x = i+1.0
     amt = int((x / iterations) * 100)
     timeRunning = time.time() - startTime
@@ -766,12 +720,10 @@ def doComputerTurn():
     weights = weightsMapping[computerTurn] 
     global board
     #board = getBestPossibleBoard(currentBoards, weights)
-    #board = getBestPossibleBoardRecursive(currentBoards, computerTurn,
-    #        playerTurn, blackWeights, whiteWeights, 3)
     #board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
     #        blackWeights, whiteWeights, 4)
     board = getBestPossibleBoardAlphaBeta(currentBoards, computerTurn,
-            blackWeights, whiteWeights, 4)
+            blackWeights, whiteWeights, 6)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
