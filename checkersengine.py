@@ -408,7 +408,7 @@ def updateAiProgress(whichAi, threadSafeQueue, i, iterations, startTime):
         threadSafeQueue.put(['whiteEstimate', timeLeft])
         threadSafeQueue.put(['whiteProgress', amt])
 
-def trainBlackAi(queue, iterations, movesToDraw, threadSafeQueue, topLevel, progressVars, timeLabels):
+def trainBlackAi(queue, iterations, movesToDraw, threadSafeQueue):
     blackWeights = makeInitialWeights()
     iterationsDoubled = iterations*2
     startTime = time.time()
@@ -449,7 +449,7 @@ def trainBlackAi(queue, iterations, movesToDraw, threadSafeQueue, topLevel, prog
 
     queue.put(blackWeights)
 
-def trainWhiteAi(queue, iterations, movesToDraw, threadSafeQueue, topLevel, progressVars, timeLabels):
+def trainWhiteAi(queue, iterations, movesToDraw, threadSafeQueue):
     whiteWeights = makeInitialWeights()
     iterationsDoubled = iterations*2
     startTime = time.time()
@@ -490,7 +490,7 @@ def trainWhiteAi(queue, iterations, movesToDraw, threadSafeQueue, topLevel, prog
 
     queue.put(whiteWeights)
 
-def timeRunningUpdater(q, threadSafeQueue, startTime, timeRunningLabel):
+def timeRunningUpdater(q, threadSafeQueue, startTime):
     while(q.qsize() <= 0):
         timeRunning = time.time() - startTime 
         s = 'Time running: {0} seconds'.format(int(timeRunning))
@@ -574,13 +574,13 @@ def trainAi(iterations, topLevel, progressVars, timeLabels):
     blackQueue = multiprocessing.Queue()
     whiteQueue = multiprocessing.Queue()
     process1 = Process(target=trainBlackAi, args=(blackQueue, iterations,
-        movesToDraw, threadSafeQueue, topLevel, progressVars, timeLabels))
+        movesToDraw, threadSafeQueue))
     process2 = Process(target=trainWhiteAi, args=(whiteQueue, iterations,
-        movesToDraw, threadSafeQueue, topLevel, progressVars, timeLabels))
+        movesToDraw, threadSafeQueue))
 
     timeRunningQueue = multiprocessing.Queue()
     timeRunningProcess = Process(target=timeRunningUpdater,
-            args=(timeRunningQueue, threadSafeQueue, startTime, timeLabels[1]))
+            args=(timeRunningQueue, threadSafeQueue, startTime))
 
     timeRunningProcess.start()
     process1.start()
@@ -675,26 +675,28 @@ def doAiTraining(root):
     for i in range(2):
         Grid.columnconfigure(topLevel, i, weight=1)
 
-blackWeights = makeInitialWeights()
-whiteWeights = makeInitialWeights()
+#we add this if statement so windows multithreading works correctly
+if __name__ == '__main__':
+    blackWeights = makeInitialWeights()
+    whiteWeights = makeInitialWeights()
 
-loadWeightsFromJson(weightsFileName)
+    loadWeightsFromJson(weightsFileName)
 
-print("--------------------")
-print('blackWeights:')
-print("--------------------")
-print(blackWeights)
-print("--------------------")
-print('whiteWeights:')
-print("--------------------")
-print(whiteWeights)
-print("--------------------")
+    print("--------------------")
+    print('blackWeights:')
+    print("--------------------")
+    print(blackWeights)
+    print("--------------------")
+    print('whiteWeights:')
+    print("--------------------")
+    print(whiteWeights)
+    print("--------------------")
 
-board = makeBoard()
+    board = makeBoard()
 
 # GUI Code
-currentGameOngoing = False
-weightsMapping = {'b': blackWeights, 'w': whiteWeights}
+    currentGameOngoing = False
+    weightsMapping = {'b': blackWeights, 'w': whiteWeights}
 
 def newGameClick():
     startGame(playAsWhich.get() == 0)
@@ -823,93 +825,95 @@ def updateButtons(board):
         buttons[i]['bg'] = 'grey'
         buttons[i].config(image=buttonUpdateImage[board[i]])
 
-root = Tk()
+#we add this if statement so windows multithreading works correctly
+if __name__ == '__main__':
+    root = Tk()
 
-#you have to make the images after instatiating the root Tkinter window for some
-#weird reason
-imagesFolder = 'checker_images'
-separator = '/'
-emptyCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'emptyChecker.png') 
-whiteCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')
-blackCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'blackChecker.png')
-whiteCheckerKingImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteCheckerKing.png')
-blackCheckerKingImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'blackCheckerKing.png')
-buttonUpdateImage = {0: emptyCheckerImage, 1:whiteCheckerImage, 2:whiteCheckerKingImage,
-        3:blackCheckerImage, 4:blackCheckerKingImage}
+    #you have to make the images after instatiating the root Tkinter window for some
+    #weird reason
+    imagesFolder = 'checker_images'
+    separator = '/'
+    emptyCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'emptyChecker.png') 
+    whiteCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')
+    blackCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'blackChecker.png')
+    whiteCheckerKingImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteCheckerKing.png')
+    blackCheckerKingImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'blackCheckerKing.png')
+    buttonUpdateImage = {0: emptyCheckerImage, 1:whiteCheckerImage, 2:whiteCheckerKingImage,
+            3:blackCheckerImage, 4:blackCheckerKingImage}
 
-Grid.rowconfigure(root, 0, weight=1)
-Grid.columnconfigure(root, 0, weight=1)
-root.wm_title("Checkers!!!")
+    Grid.rowconfigure(root, 0, weight=1)
+    Grid.columnconfigure(root, 0, weight=1)
+    root.wm_title("Checkers!!!")
 
-topLevelFrame = Frame(root)
-topLevelFrame.grid(row=0, column=0, sticky=N+S+E+W)
+    topLevelFrame = Frame(root)
+    topLevelFrame.grid(row=0, column=0, sticky=N+S+E+W)
 
-boardFrame = Frame(topLevelFrame)
-boardFrame.grid(row=0, column=0, sticky=N+S+E+W)
+    boardFrame = Frame(topLevelFrame)
+    boardFrame.grid(row=0, column=0, sticky=N+S+E+W)
 
-Grid.rowconfigure(topLevelFrame, 0, weight=1)
-Grid.columnconfigure(topLevelFrame, 0, weight=5)
-Grid.columnconfigure(topLevelFrame, 1, weight=1)
+    Grid.rowconfigure(topLevelFrame, 0, weight=1)
+    Grid.columnconfigure(topLevelFrame, 0, weight=5)
+    Grid.columnconfigure(topLevelFrame, 1, weight=1)
 
-buttonFont = tkFont.Font(family='Helvetica', size=24, weight='bold')
-buttons = []
-i, j, num = 0, 0, 0
-for r in range(8):
-    num += 1
-    if(num >= 2):
-        num = 0
+    buttonFont = tkFont.Font(family='Helvetica', size=24, weight='bold')
+    buttons = []
+    i, j, num = 0, 0, 0
+    for r in range(8):
+        num += 1
+        if(num >= 2):
+            num = 0
+        for c in range(8):
+            button = Button(boardFrame, text="", command=partial(buttonClick, i)) 
+            button.grid(row=r, column=c, sticky=N+S+E+W)
+            button['font'] = buttonFont
+            button['bg'] = 'white'
+            button['state'] = 'disabled'
+            if(j % 2 == num):
+                i += 1
+                #button['text'] = str(i) #this displays the index for each board position
+                button['bg'] = 'grey'
+                button['state'] = 'normal'
+                buttons.append(button)
+
+            j += 1
+
+    for r in range(8):
+        Grid.rowconfigure(boardFrame, r, weight=1)
     for c in range(8):
-        button = Button(boardFrame, text="", command=partial(buttonClick, i)) 
-        button.grid(row=r, column=c, sticky=N+S+E+W)
-        button['font'] = buttonFont
-        button['bg'] = 'white'
-        button['state'] = 'disabled'
-        if(j % 2 == num):
-            i += 1
-            #button['text'] = str(i) #this displays the index for each board position
-            button['bg'] = 'grey'
-            button['state'] = 'normal'
-            buttons.append(button)
+        Grid.columnconfigure(boardFrame, c, weight=1)
 
-        j += 1
+    optionsFrame = Frame(topLevelFrame)
+    optionsFrame.grid(row=0, column=1, sticky=N+S+E+W)
 
-for r in range(8):
-    Grid.rowconfigure(boardFrame, r, weight=1)
-for c in range(8):
-    Grid.columnconfigure(boardFrame, c, weight=1)
+    newGameButton = Button(optionsFrame, text="New Game?", command=newGameClick)
+    newGameButton.grid(row=0, column=0, sticky=N+S+E+W)
 
-optionsFrame = Frame(topLevelFrame)
-optionsFrame.grid(row=0, column=1, sticky=N+S+E+W)
+    playAsWhich = IntVar() 
+    radio1 = Radiobutton(optionsFrame, text="Play as black?", variable=playAsWhich, value=0)
+    radio1.grid(row=1, column=0, sticky=N+S+E+W)
+    radio1.invoke()
+    radio2 = Radiobutton(optionsFrame, text="Play as white?", variable=playAsWhich, value=1)
+    radio2.grid(row=2, column=0, sticky=N+S+E+W)
 
-newGameButton = Button(optionsFrame, text="New Game?", command=newGameClick)
-newGameButton.grid(row=0, column=0, sticky=N+S+E+W)
+    displayMovesButton = Button(optionsFrame, text="Display moves", command=displayMovesClick)
+    displayMovesButton.grid(row=3, column=0, sticky=N+S+W+E)
 
-playAsWhich = IntVar() 
-radio1 = Radiobutton(optionsFrame, text="Play as black?", variable=playAsWhich, value=0)
-radio1.grid(row=1, column=0, sticky=N+S+E+W)
-radio1.invoke()
-radio2 = Radiobutton(optionsFrame, text="Play as white?", variable=playAsWhich, value=1)
-radio2.grid(row=2, column=0, sticky=N+S+E+W)
+    statusLabel = Label(optionsFrame, text="click new game!")
+    statusLabel.grid(row=4, column=0, sticky=N+S+W+E)
 
-displayMovesButton = Button(optionsFrame, text="Display moves", command=displayMovesClick)
-displayMovesButton.grid(row=3, column=0, sticky=N+S+W+E)
+    loadAIButton = Button(optionsFrame, text="Load AI", command=openJsonFile)
+    loadAIButton.grid(row=5, column=0, sticky=N+S+W+E)
 
-statusLabel = Label(optionsFrame, text="click new game!")
-statusLabel.grid(row=4, column=0, sticky=N+S+W+E)
+    saveAIButton = Button(optionsFrame, text="Save AI", command=saveJsonFile)
+    saveAIButton.grid(row=6, column=0, sticky=N+S+W+E)
 
-loadAIButton = Button(optionsFrame, text="Load AI", command=openJsonFile)
-loadAIButton.grid(row=5, column=0, sticky=N+S+W+E)
+    trainAIButton = Button(optionsFrame, text="Train AI", command=partial(doAiTraining, root))
+    trainAIButton.grid(row=7, column=0, sticky=N+S+W+E)
 
-saveAIButton = Button(optionsFrame, text="Save AI", command=saveJsonFile)
-saveAIButton.grid(row=6, column=0, sticky=N+S+W+E)
+    for i in range(8):
+        Grid.rowconfigure(optionsFrame, i, weight=1)
+    Grid.rowconfigure(optionsFrame, 8, weight=20)
+    Grid.columnconfigure(optionsFrame, 0, weight=1)
 
-trainAIButton = Button(optionsFrame, text="Train AI", command=partial(doAiTraining, root))
-trainAIButton.grid(row=7, column=0, sticky=N+S+W+E)
-
-for i in range(8):
-    Grid.rowconfigure(optionsFrame, i, weight=1)
-Grid.rowconfigure(optionsFrame, 8, weight=20)
-Grid.columnconfigure(optionsFrame, 0, weight=1)
-
-updateButtons(board)
-root.mainloop()
+    updateButtons(board)
+    root.mainloop()
