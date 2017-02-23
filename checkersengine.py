@@ -68,9 +68,35 @@ def getFeatures(board):
     features.append(b)
     return features
 
-def getNTrapped(board, x):
-    #TODO- implement this
-    return 0
+#get the number of trapped kings
+def getNTrapped(board, side):
+    x = 2 if(side == 'w') else 4
+    if(x == 2):
+        enemyCheckers = [3, 4]
+    else:
+        enemyCheckers = [1, 2]
+
+    result = 0
+    for z in range(32):
+        trapped = True
+        if(board[z] == x):
+            oneIndex = z+1
+            for (iK, jK) in kingJumpMapping[oneIndex]:
+                i, j = iK-1, jK-1
+                if(board[i] in enemyCheckers and board[j] == 0):
+                    trapped = False
+                    break
+
+            if(trapped):
+                for i in kingMoveMapping[oneIndex]:
+                    if(board[i-1] == 0):
+                        trapped = False
+                        break
+
+        if(trapped == False):
+            result += 1
+
+    return result 
 
 def getNRunawayCheckers(board, x):
     #TODO- implement this
@@ -86,8 +112,8 @@ def getChinookFeatures(board):
                 board.count(3),
                 board.count(2),
                 board.count(4),
-                getNTrapped(board, 2),
-                getNTrapped(board, 4),
+                getNTrapped(board, 'w'),
+                getNTrapped(board, 'b'),
                 getNRunawayCheckers(board, 1),
                 getNRunawayCheckers(board, 3)]
 
