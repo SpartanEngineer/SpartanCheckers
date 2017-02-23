@@ -214,13 +214,20 @@ def getBestPossibleBoardMinimax(boards, side, blackWeights, whiteWeights, depth=
 
     return chooseMaximumBoard(values, boards)
 
+def evaluateAlphaBetaMapper(a):
+    return evaluateBoardAlphaBeta(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7])
+
 def getBestPossibleBoardAlphaBeta(boards, side, blackWeights, whiteWeights, depth=3):
     if(len(boards) == 1):
         return boards[0]
 
     turn = side
-    values = [evaluateBoardAlphaBeta(b, depth, True, -float("inf"),
-        float("inf"), turn, blackWeights, whiteWeights) for b in boards]
+    #use the multiprocessing.Pool() to multi-thread our board evaluations
+    pool = multiprocessing.Pool()
+
+    a = [(b, depth, True, -float("inf"), float("inf"), turn, blackWeights,
+        whiteWeights) for b in boards]
+    values = pool.map(evaluateAlphaBetaMapper, a)
 
     return chooseMaximumBoard(values, boards)
 
@@ -748,7 +755,7 @@ def doComputerTurn():
     #board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
     #        blackWeights, whiteWeights, 4)
     board = getBestPossibleBoardAlphaBeta(currentBoards, computerTurn,
-            blackWeights, whiteWeights, 8)
+            blackWeights, whiteWeights, 6)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
