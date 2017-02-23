@@ -98,13 +98,20 @@ def getNTrapped(board, side):
 
     return result 
 
-def getNRunawayCheckers(board, x):
+def isRunaway(board, index, enemyCheckers):
     #TODO- implement this
-    return 0
+    return False
+
+def getNRunawayCheckers(board, side):
+    x = 1 if(side == 'w') else 3
+    enemyCheckers = [3, 4] if(side == 'w') else [1, 2]
+    result = 0
+    for z in range(32):
+        if(isRunaway(board, z, enemyCheckers)):
+            result += 1
+    return result
 
 def getChinookFeatures(board):
-    #TODO- implement this
-
     #features:
     #piece count, kings count, trapped kings, turn, runaway checkers(free path
     #to king)
@@ -114,8 +121,8 @@ def getChinookFeatures(board):
                 board.count(4),
                 getNTrapped(board, 'w'),
                 getNTrapped(board, 'b'),
-                getNRunawayCheckers(board, 1),
-                getNRunawayCheckers(board, 3)]
+                getNRunawayCheckers(board, 'w'),
+                getNRunawayCheckers(board, 'b')]
 
     return features
 
