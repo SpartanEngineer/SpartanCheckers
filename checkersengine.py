@@ -10,7 +10,7 @@ from Queue import Empty, Queue
 from checkersMoveMappings import *
 
 weightsFileName = 'weights.json'
-learnConstant = 0.1 #learning constant
+learnConstant = 0.01 #learning constant
 initialWeight = 0.5
 
 winValue = 100
@@ -37,6 +37,10 @@ def makeInitialWeights():
         a = [initialWeight for j in range(32)]
         weights.append(a)
     weights.append([initialWeight for j in range(6)])
+    return weights
+
+def makeChinookWeights():
+    weights = [initialWeight for i in range(8)]
     return weights
 
 def hasPieces(board, turn):
@@ -113,6 +117,7 @@ def isRunaway(board, index, backRow, moveMapping):
 def getNRunawayCheckers(board, side):
     x = 1 if(side == 'w') else 3
     moveMapping = moveMappings[side]
+    enemyCheckers = [3, 4] if(side == 'w') else [1, 2]
     backRow = [0, 1, 2, 3] if(side == 'w') else [31, 30, 29, 28]
     spotsOpen = [False for x in range(4)]
 
@@ -149,6 +154,13 @@ def getChinookFeatures(board):
 
     return features
 
+def evaluateChinookFeatures(features, weights):
+    value = 0
+    for i in range(len(weights)):
+        value += (weights[i] * features[i])
+
+    return value
+
 def evaluateFeatures(features, weights):
     value = 0
     for i in range(len(weights)):
@@ -157,8 +169,12 @@ def evaluateFeatures(features, weights):
 
     return value
 
+def evaluateBoardChinook(board, weights):
+    return evaluateChinookFeatures(getChinookFeatures(board), weights)
+
 def evaluateBoard(board, weights):
-    return evaluateFeatures(getFeatures(board), weights)
+    return evaluateBoardChinook(board, weights)
+    #return evaluateFeatures(getFeatures(board), weights)
 
 def evaluateBoardMinimax(board, depth, maximizingPlayer, turn, blackWeights,
         whiteWeights):
@@ -236,14 +252,25 @@ def updateWeights(trainingData, weights, didWin):
 
     for i in range(n):
         board = trainingData[i]
-        features = getFeatures(board)
+        features = getChinookFeatures(board)
         value = values[i]
+        if(value == -float("inf")):
+            value = lossValue
+        elif(value == float("inf")):
+            value = winValue
         estimate = estimates[i] 
+        if(estimate == -float("inf")):
+            estimate = lossValue
+        elif(estimate == float("inf")):
+            estimate = winValue
+
+        #print(value, estimate, weights, features)
 
         #update our weights
         for j in range(len(weights)):
-            for k in range(len(weights[j])):
-                weights[j][k] = weights[j][k] + (learnConstant*(value-estimate)*features[j][k])
+            weights[j] = weights[j] + (learnConstant*(value-estimate)*features[j])
+            #for k in range(len(weights[j])):
+                #weights[j][k] = weights[j][k] + (learnConstant*(value-estimate)*features[j][k])
 
 def chooseMaximumBoard(values, boards):
     maxValue = values[0]
@@ -432,7 +459,7 @@ def updateAiProgress(whichAi, threadSafeQueue, i, iterations, startTime):
         threadSafeQueue.put(['whiteProgress', amt])
 
 def trainBlackAi(queue, iterations, movesToDraw, threadSafeQueue):
-    blackWeights = makeInitialWeights()
+    blackWeights = makeChinookWeights()
     iterationsDoubled = iterations*2
     startTime = time.time()
 
@@ -473,7 +500,7 @@ def trainBlackAi(queue, iterations, movesToDraw, threadSafeQueue):
     queue.put(blackWeights)
 
 def trainWhiteAi(queue, iterations, movesToDraw, threadSafeQueue):
-    whiteWeights = makeInitialWeights()
+    whiteWeights = makeChinookWeights()
     iterationsDoubled = iterations*2
     startTime = time.time()
 
@@ -813,7 +840,7 @@ def doComputerTurn():
     #board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
     #        blackWeights, whiteWeights, 4)
     board = getBestPossibleBoardAlphaBeta(currentBoards, computerTurn,
-            blackWeights, whiteWeights, 6)
+            blackWeights, whiteWeights, 8)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
@@ -938,5 +965,5 @@ if __name__ == '__main__':
     Grid.rowconfigure(optionsFrame, 8, weight=20)
     Grid.columnconfigure(optionsFrame, 0, weight=1)
 
-    #updateButtons(board)
+    updateButtons(board)
     root.mainloop()
