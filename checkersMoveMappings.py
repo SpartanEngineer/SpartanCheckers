@@ -1,3 +1,5 @@
+import Queue
+
 #this file contains the move/jump mappings for each space on the board
 
 #the squares that a checker can move into from each position
@@ -203,3 +205,41 @@ kingJumpMapping =  {1:[[6, 10]],
 
 moveMappings = {'w':whiteMoveMapping, 'b':blackMoveMapping}
 jumpMappings = {'w':whiteJumpMapping, 'b':blackJumpMapping}
+
+#set the distance mappings (the distance in moves between every space in the
+#board)... we're using djkstra's algorithm to do this
+def updateDistanceMappings(distMapping, moveMapping, i):
+    visited = [False for x in range(33)]
+
+    for j in range(1, 33):
+        distMapping[i][j] = float("inf")
+
+    queue = Queue.PriorityQueue()
+    queue.put((0, i))
+    while(not queue.empty()):
+        moves, j = queue.get()
+        if(visited[j] == True):
+            next
+        visited[j] = True
+        distMapping[i][j] = min(distMapping[i][j], moves)
+
+        for m in moveMapping[j]:
+            if(visited[m] == False):
+                queue.put((moves+1, m))
+
+blackDistanceMapping = {}
+for i in range(1, 33):
+    blackDistanceMapping[i] = {}
+    updateDistanceMappings(blackDistanceMapping, blackMoveMapping, i)
+
+whiteDistanceMapping = {}
+for i in range(1, 33):
+    whiteDistanceMapping[i] = {}
+    updateDistanceMappings(whiteDistanceMapping, whiteMoveMapping, i)
+
+kingDistanceMapping = {}
+for i in range(1, 33):
+    kingDistanceMapping[i] = {}
+    updateDistanceMappings(kingDistanceMapping, kingMoveMapping, i)
+
+distanceMappings = {'w':whiteDistanceMapping, 'b':blackDistanceMapping}
