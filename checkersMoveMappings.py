@@ -211,6 +211,7 @@ jumpMappings = {'w':whiteJumpMapping, 'b':blackJumpMapping}
 def updateDistanceMappings(distMapping, moveMapping, i):
     visited = [False for x in range(33)]
 
+    distMapping[i] = {}
     for j in range(1, 33):
         distMapping[i][j] = float("inf")
 
@@ -229,17 +230,14 @@ def updateDistanceMappings(distMapping, moveMapping, i):
 
 blackDistanceMapping = {}
 for i in range(1, 33):
-    blackDistanceMapping[i] = {}
     updateDistanceMappings(blackDistanceMapping, blackMoveMapping, i)
 
 whiteDistanceMapping = {}
 for i in range(1, 33):
-    whiteDistanceMapping[i] = {}
     updateDistanceMappings(whiteDistanceMapping, whiteMoveMapping, i)
 
 kingDistanceMapping = {}
 for i in range(1, 33):
-    kingDistanceMapping[i] = {}
     updateDistanceMappings(kingDistanceMapping, kingMoveMapping, i)
 
 distanceMappings = {'w':whiteDistanceMapping, 'b':blackDistanceMapping}

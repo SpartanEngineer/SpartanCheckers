@@ -98,17 +98,40 @@ def getNTrapped(board, side):
 
     return result 
 
-def isRunaway(board, index, enemyCheckers):
-    #TODO- implement this
+def isRunaway(board, index, backRow, moveMapping):
+    zeroIndex = index-1
+    if(zeroIndex in backRow):
+        return board[zeroIndex] == 0
+    if(board[zeroIndex] == 0):
+        result = True
+        for m in moveMapping[index]:
+            result = (result and isRunaway(board, m, backRow, moveMapping))
+        return result
+
     return False
 
 def getNRunawayCheckers(board, side):
     x = 1 if(side == 'w') else 3
-    enemyCheckers = [3, 4] if(side == 'w') else [1, 2]
+    moveMapping = moveMappings[side]
+    backRow = [0, 1, 2, 3] if(side == 'w') else [31, 30, 29, 28]
+    spotsOpen = [False for x in range(4)]
+
+    for i in range(4):
+        if(not board[backRow[i]] in enemyCheckers):
+            spotsOpen[i] = True
+
+    if(spotsOpen == [False, False, False, False]):
+        return 0
+
     result = 0
     for z in range(32):
-        if(isRunaway(board, z, enemyCheckers)):
+        isTrue = True
+        for m in moveMapping[z+1]:
+            isTrue = (isTrue and isRunaway(board, m, backRow, moveMapping))
+
+        if(isTrue):
             result += 1
+
     return result
 
 def getChinookFeatures(board):
@@ -870,7 +893,7 @@ if __name__ == '__main__':
             button['state'] = 'disabled'
             if(j % 2 == num):
                 i += 1
-                #button['text'] = str(i) #this displays the index for each board position
+                button['text'] = str(i) #this displays the index for each board position
                 button['bg'] = 'grey'
                 button['state'] = 'normal'
                 buttons.append(button)
@@ -915,5 +938,5 @@ if __name__ == '__main__':
     Grid.rowconfigure(optionsFrame, 8, weight=20)
     Grid.columnconfigure(optionsFrame, 0, weight=1)
 
-    updateButtons(board)
+    #updateButtons(board)
     root.mainloop()
