@@ -1,4 +1,4 @@
-import re, tkFont, copy, random, time, tkMessageBox, json, os.path, ttk
+import re, tkFont, copy, random, time, tkMessageBox, json, os.path, ttk, math
 from Tkinter import *
 from tkFileDialog import askopenfilename, asksaveasfilename
 from functools import partial
@@ -10,12 +10,29 @@ from Queue import Empty, Queue
 from checkersMoveMappings import *
 
 weightsFileName = 'weights.json'
-learnConstant = 0.01 #learning constant
+learnConstant = 0.1 #learning constant
 initialWeight = 0.5
 
 winValue = 100
 lossValue = -100
 drawValue = 0
+
+def isNan(x):
+    return math.isnan(x)
+
+def isInf(x):
+    return math.isinf(x) and x > 0
+
+def isNegInf(x):
+    return math.isinf(x) and x < 0
+
+def setInf(x):
+    if(isInf(x)):
+        return winValue
+    elif(isNegInf(x)):
+        return lossValue
+    else:
+        return x
 
 #0 == empty
 #1 == black checker
@@ -40,7 +57,7 @@ def makeInitialWeights():
     return weights
 
 def makeChinookWeights():
-    weights = [initialWeight for i in range(8)]
+    weights = [initialWeight for i in range(14)]
     return weights
 
 def hasPieces(board, turn):
@@ -150,14 +167,20 @@ def getChinookFeatures(board):
                 getNTrapped(board, 'w'),
                 getNTrapped(board, 'b'),
                 getNRunawayCheckers(board, 'w'),
-                getNRunawayCheckers(board, 'b')]
+                getNRunawayCheckers(board, 'b'),
+                hasPieces(board, 'w'),
+                hasPieces(board, 'b'),
+                hasMoves(board, 'w'),
+                hasMoves(board, 'b'),
+                piecesCanJump(board, 'w'),
+                piecesCanJump(board, 'b')]
 
     return features
 
 def evaluateChinookFeatures(features, weights):
     value = 0
     for i in range(len(weights)):
-        value += (weights[i] * features[i])
+        value += setInf(weights[i] * features[i])
 
     return value
 
@@ -253,22 +276,16 @@ def updateWeights(trainingData, weights, didWin):
     for i in range(n):
         board = trainingData[i]
         features = getChinookFeatures(board)
-        value = values[i]
-        if(value == -float("inf")):
-            value = lossValue
-        elif(value == float("inf")):
-            value = winValue
-        estimate = estimates[i] 
-        if(estimate == -float("inf")):
-            estimate = lossValue
-        elif(estimate == float("inf")):
-            estimate = winValue
+        value = setInf(values[i])
+        estimate = setInf(estimates[i])
 
         #print(value, estimate, weights, features)
 
         #update our weights
         for j in range(len(weights)):
-            weights[j] = weights[j] + (learnConstant*(value-estimate)*features[j])
+            if(features[j] != 0):
+                weights[j] = setInf(weights[j] +
+                        (learnConstant*(value-estimate)*features[j]))
             #for k in range(len(weights[j])):
                 #weights[j][k] = weights[j][k] + (learnConstant*(value-estimate)*features[j][k])
 
@@ -840,7 +857,7 @@ def doComputerTurn():
     #board = getBestPossibleBoardMinimax(currentBoards, computerTurn,
     #        blackWeights, whiteWeights, 4)
     board = getBestPossibleBoardAlphaBeta(currentBoards, computerTurn,
-            blackWeights, whiteWeights, 8)
+            blackWeights, whiteWeights, 6)
     nextTurn()
     statusLabel['text'] = 'player turn'
 
