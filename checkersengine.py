@@ -898,7 +898,7 @@ if __name__ == '__main__':
 
     #you have to make the images after instatiating the root Tkinter window for some
     #weird reason
-    imagesFolder = 'checker_images'
+    imagesFolder = 'resources'
     separator = '/'
     emptyCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'emptyChecker.png') 
     whiteCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')
