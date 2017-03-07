@@ -9,7 +9,7 @@ from Queue import Empty, Queue
 
 from CheckersMoveMappings import *
 
-weightsFileName = '../resources/weights.json'
+weightsFileName = rootDir + '/resources/weights.json'
 learnConstant = 0.1 #learning constant
 initialWeight = 0.5
 
@@ -898,7 +898,7 @@ if __name__ == '__main__':
 
     #you have to make the images after instatiating the root Tkinter window for some
     #weird reason
-    imagesFolder = '../resources'
+    imagesFolder = rootDir + '/resources'
     separator = '/'
     emptyCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'emptyChecker.png') 
     whiteCheckerImage = ImageTk.PhotoImage(file=imagesFolder + separator + 'whiteChecker.png')

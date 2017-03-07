@@ -10,8 +10,5 @@ Python 2.7, pillow (https://python-pillow.org/)
 
 #Usage:
 ```sh
-python SpartanCheckers.py
+python RunSpartanCheckers.py
 ```
-
-NOTE: this command must be run from the SpartanCheckers 'src' directory.
-
